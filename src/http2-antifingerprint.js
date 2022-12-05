@@ -7,7 +7,7 @@ const {
   AntiFingerprintClientSessionOptions,
 } = require("./options/AntiFingerprintClientSessionOptions.js");
 
-const { randint } = require("./randint.js");
+const { shuffle } = require("./shuffle.js");
 
 async function connect(authority, listener, options) {
   let isAuthenticatedProxy = false;
@@ -83,11 +83,40 @@ async function connect(authority, listener, options) {
 
   const originalRequest = client.request;
 
-  client.request = (headers, options) => {
+  client.request = (headers, options, antifingerprintOptions) => {
+    let reorderHeaders = true;
+    let reorderPseudoHeaders = true;
+
+    if (typeof antifingerprintOptions === "object") {
+      const optionsReorderHeaders = antifingerprintOptions.reorderHeaders;
+      const optionsReorderPseudoHeaders =
+        antifingerprintOptions.reorderPseudoHeaders;
+
+      if (typeof optionsReorderHeaders !== "undefined") {
+        reorderHeaders = optionsReorderHeaders;
+      }
+
+      if (typeof optionsReorderPseudoHeaders !== "undefined") {
+        reorderPseudoHeaders = optionsReorderPseudoHeaders;
+      }
+    }
+
     const newHeaders = {};
-    const keys = Object.getOwnPropertyNames(headers).sort(() =>
-      !!randint(0, 1) ? -1 : 1
-    );
+    let keys = Object.getOwnPropertyNames(headers);
+
+    if (reorderPseudoHeaders) {
+      keys = [
+        ...shuffle(keys.filter((key) => key.startsWith(":"))),
+        ...keys.filter((key) => !key.startsWith(":")),
+      ];
+    }
+
+    if (reorderHeaders) {
+      keys = [
+        ...keys.filter((key) => key.startsWith(":")),
+        ...shuffle(keys.filter((key) => !key.startsWith(":"))),
+      ];
+    }
 
     for (const key of keys) {
       newHeaders[key] = headers[key];
