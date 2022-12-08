@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "description": "Prevents identifying http2 requests",
   "main": "index.js",
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "http2",
+    "antifingerprint",
+    "scrapping",
+    "scraper",
+    "anonymous",
+    "scrap",
+    "reorder",
+    "headers",
+    "ja3",
+    "akamai",
+    "node",
+    "fingerprint",
+    "passive",
+    "bot"
+  ],
+  "homepage": "https://github.com/thepicture/http2-antifingerprint",
+  "author": "thepicture",
   "license": "ISC"
 }
