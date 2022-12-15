@@ -1,7 +1,7 @@
 # HTTP/2 Antifingerprint
 Allows to create `ClientHttp2Session` with passive fingerprint evasion by changing JA3, HTTP/2 options, header order and pseudo-header order.
 ## Example
-```
+```javascript
 const { http2antifingerprint } = require("http2-antifingerprint");
 (async () => {
   const options = {
