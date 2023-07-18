@@ -6,4 +6,5 @@ const {
 module.exports = {
   http2antifingerprint,
   AntiFingerprintClientSessionOptions,
+  connect: http2antifingerprint.connect,
 };
