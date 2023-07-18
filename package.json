@@ -17,7 +17,8 @@
     "node",
     "fingerprint",
     "passive",
-    "bot"
+    "bot",
+    "cipher"
   ],
   "homepage": "https://github.com/thepicture/http2-antifingerprint",
   "author": "thepicture",
