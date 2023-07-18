@@ -63,22 +63,29 @@ async function connect(authority, listener, options) {
         onSwitchingProtocols(response);
         resolve(
           http2.connect(authority, {
-            createConnection: () =>
-              tls.connect({
-                host,
-                socket: socket,
-                ALPNProtocols: ["h2"],
-              }),
+            createConnection:
+              options.createConnection ||
+              (() =>
+                tls.connect({
+                  host,
+                  socket: socket,
+                  ALPNProtocols: ["h2"],
+                })),
           })
         );
       });
     });
   } else {
-    client = http2.connect(
-      authority,
-      new AntiFingerprintClientSessionOptions().get(),
-      listener
-    );
+    let sessionOptions = new AntiFingerprintClientSessionOptions().get();
+
+    if (options) {
+      sessionOptions = {
+        ...sessionOptions,
+        ...options,
+      };
+    }
+
+    client = http2.connect(authority, sessionOptions, listener);
   }
 
   const originalRequest = client.request;
