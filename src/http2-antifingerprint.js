@@ -3,6 +3,8 @@ const http2 = require("node:http2");
 
 const tls = require("node:tls");
 
+const config = require("./options/const");
+
 const {
   AntiFingerprintClientSessionOptions,
 } = require("./options/AntiFingerprintClientSessionOptions.js");
@@ -93,6 +95,7 @@ async function connect(authority, listener, options) {
   client.request = (headers, options, antifingerprintOptions) => {
     let reorderHeaders = true;
     let reorderPseudoHeaders = true;
+    let preferChromeHeaderOrder = false;
 
     if (typeof antifingerprintOptions === "object") {
       const optionsReorderHeaders = antifingerprintOptions.reorderHeaders;
@@ -106,6 +109,51 @@ async function connect(authority, listener, options) {
       if (typeof optionsReorderPseudoHeaders !== "undefined") {
         reorderPseudoHeaders = optionsReorderPseudoHeaders;
       }
+    }
+
+    if (antifingerprintOptions.preferChromeHeaderOrder) {
+      preferChromeHeaderOrder = true;
+    }
+
+    const areImpossibleOptions =
+      (antifingerprintOptions.reorderPseudoHeaders ||
+        antifingerprintOptions.reorderHeaders) &&
+      preferChromeHeaderOrder;
+
+    if (areImpossibleOptions) {
+      throw new Error(
+        "preferChromeHeaderOrder cannot be used with reorderPseudoHeaders or reorderHeaders at same time"
+      );
+    }
+
+    if (preferChromeHeaderOrder) {
+      const pseudoHeadersBefore = Object.keys(headers);
+
+      const isMethodWithPostBody = ["post", "put", "patch"].some(
+        (verb) =>
+          headers[http2.constants.HTTP2_HEADER_METHOD]?.toLowerCase() ===
+          verb.toLowerCase()
+      );
+
+      const configEntry = isMethodWithPostBody ? "post" : "get";
+
+      const specimenHeaderOrder = config.order.chrome[configEntry].header.order;
+
+      const headersAfter = {};
+
+      for (const pseudoHeaderName of specimenHeaderOrder.pseudo) {
+        if (pseudoHeadersBefore.includes(pseudoHeaderName)) {
+          headersAfter[pseudoHeaderName] = headers[pseudoHeaderName];
+        }
+      }
+
+      for (const headerName of specimenHeaderOrder.http) {
+        if (pseudoHeadersBefore.includes(headerName)) {
+          headersAfter[headerName] = headers[headerName];
+        }
+      }
+
+      return originalRequest.call(client, headersAfter, options);
     }
 
     const newHeaders = {};
