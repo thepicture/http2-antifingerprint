@@ -100,7 +100,10 @@ In such case, header ordering will be chrome, because many sites reject non-chro
 - `reorderPseudoHeaders` defaults to `true`
 - `reorderHeaders` defaults to `true`
 
-  **Notice**: if you make `true` only `preferChromeHeaderOrder`, you don't have to explicitly disable `reorderPseudoHeaders` and `reorderHeaders` properties as they will default to `false` automatically.
+Can have `strictMode` boolean property. If specified, the `client.request` method call without second and third arguments will reject with error.
+`false` by default.
+
+**Notice**: if `preferChromeHeaderOrder` is `true`, it is not required to set `reorderPseudoHeaders` and `reorderHeaders` properties to `false` as they will default to `false`.
 
 ## Test
 

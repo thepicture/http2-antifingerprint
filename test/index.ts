@@ -27,13 +27,76 @@ describe("client instantiation", () => {
 
 describe("request", () => {
   it("should fallback to client options on no options", async () => {
-    const client = await http2antifingerprint
-      .connect("https://example.com", listener, {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
         preferChromeHeaderOrder: true,
-      })
-      .catch(() => {});
+      }
+    );
 
     const actual = () => client.request("/api");
+
+    try {
+      assert.doesNotThrow(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should throw error in request with strict mode without options", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        preferChromeHeaderOrder: true,
+        strictMode: true,
+      }
+    );
+
+    const actual = () => client.request("/api");
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should not throw error in request with strict mode with options", async () => {
+    const options = {
+      preferChromeHeaderOrder: true,
+      strictMode: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const actual = () => client.request("/api", http2options, options);
+
+    try {
+      assert.doesNotThrow(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should not throw error in request without strict mode with options", async () => {
+    const options = {
+      preferChromeHeaderOrder: true,
+      strictMode: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const actual = () => client.request("/api", http2options, options);
 
     try {
       assert.doesNotThrow(actual);

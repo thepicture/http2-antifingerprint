@@ -99,6 +99,18 @@ async function connect(authority, listener, options) {
     let reorderPseudoHeaders = true;
     let preferChromeHeaderOrder = false;
 
+    const isWrongMethodCallInStrictMode =
+      this._http2antifingerprintOptions?.strictMode &&
+      !(antifingerprintOptions && options);
+
+    if (isWrongMethodCallInStrictMode) {
+      throw new Error(
+        "client.request requires " +
+          "options in strict mode. " +
+          "Usage: client.request([headers], [client session options], [header options])"
+      );
+    }
+
     const fallbackOptions =
       antifingerprintOptions || this._http2antifingerprintOptions;
 
