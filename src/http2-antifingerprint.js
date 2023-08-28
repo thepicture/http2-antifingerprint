@@ -18,6 +18,8 @@ async function connect(authority, listener, options) {
   let onSwitchingProtocols = () => {};
 
   if (typeof options === "object") {
+    this._http2antifingerprintListener = listener;
+    this._http2antifingerprintOptions = options;
     optionsProxy = options.proxy;
 
     if (optionsProxy) {
@@ -97,10 +99,12 @@ async function connect(authority, listener, options) {
     let reorderPseudoHeaders = true;
     let preferChromeHeaderOrder = false;
 
-    if (typeof antifingerprintOptions === "object") {
-      const optionsReorderHeaders = antifingerprintOptions.reorderHeaders;
-      const optionsReorderPseudoHeaders =
-        antifingerprintOptions.reorderPseudoHeaders;
+    const fallbackOptions =
+      antifingerprintOptions || this._http2antifingerprintOptions;
+
+    if (typeof fallbackOptions === "object") {
+      const optionsReorderHeaders = fallbackOptions.reorderHeaders;
+      const optionsReorderPseudoHeaders = fallbackOptions.reorderPseudoHeaders;
 
       if (typeof optionsReorderHeaders !== "undefined") {
         reorderHeaders = optionsReorderHeaders;
@@ -111,13 +115,13 @@ async function connect(authority, listener, options) {
       }
     }
 
-    if (antifingerprintOptions.preferChromeHeaderOrder) {
+    if (fallbackOptions.preferChromeHeaderOrder) {
       preferChromeHeaderOrder = true;
     }
 
     const areImpossibleOptions =
-      (antifingerprintOptions.reorderPseudoHeaders ||
-        antifingerprintOptions.reorderHeaders) &&
+      (fallbackOptions.reorderPseudoHeaders ||
+        fallbackOptions.reorderHeaders) &&
       preferChromeHeaderOrder;
 
     if (areImpossibleOptions) {

@@ -92,10 +92,18 @@ Returns a `Promise<ClientHttp2Session>`.
 - `[client session options]` - the same semantics as in `node:http2` built-in package. Can be an empty object.
 - `[header options]` - not a mandatory argument that can have `reorderPseudoHeaders` and `reorderHeaders` boolean properties. Both are `true` by default.
 
-  Can have `preferChromeHeaderOrder` property that cannot be used with `reorderPseudoHeaders` or with `reorderHeaders` properties.
-  In such case, header ordering will be chrome, because many sites reject non-chrome header orders or detect bots with it. Defaults to `false`
+Fallbacks to parent's client session options if `[header options]` are not specified.
+
+Can have `preferChromeHeaderOrder` property that cannot be used with `reorderPseudoHeaders` or with `reorderHeaders` properties.
+In such case, header ordering will be chrome, because many sites reject non-chrome header orders or detect bots with it. Defaults to `false`
 
 - `reorderPseudoHeaders` defaults to `true`
 - `reorderHeaders` defaults to `true`
 
   **Notice**: if you make `true` only `preferChromeHeaderOrder`, you don't have to explicitly disable `reorderPseudoHeaders` and `reorderHeaders` properties as they will default to `false` automatically.
+
+## Test
+
+```js
+npm test
+```
