@@ -3,6 +3,13 @@
   "version": "1.2.4",
   "description": "Prevents identifying http2 requests",
   "main": "index.js",
+  "scripts": {
+    "test": "node --loader tsx test/index.ts"
+  },
+  "files": [
+    "src",
+    "index.js"
+  ],
   "keywords": [
     "http2",
     "antifingerprint",
@@ -22,5 +29,10 @@
   ],
   "homepage": "https://github.com/thepicture/http2-antifingerprint",
   "author": "thepicture",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "20.5.7",
+    "nock": "13.3.3",
+    "tsx": "3.12.7"
+  }
 }
