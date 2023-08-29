@@ -50,7 +50,7 @@ async function connect(authority, listener, options) {
     const headers = {};
     if (isAuthenticatedProxy) {
       headers["Proxy-Authorization"] = `Basic ${Buffer.from(
-        optionsProxy.user + ":" + optionsProxy.password
+        `${optionsProxy.user}:${optionsProxy.password}`
       ).toString("base64")}`;
     }
     const request = http.request({
@@ -111,12 +111,14 @@ async function connect(authority, listener, options) {
       );
     }
 
-    const fallbackOptions =
-      antifingerprintOptions || this._http2antifingerprintOptions;
+    const mergedOptions = {
+      ...antifingerprintOptions,
+      ...this._http2antifingerprintOptions,
+    };
 
-    if (typeof fallbackOptions === "object") {
-      const optionsReorderHeaders = fallbackOptions.reorderHeaders;
-      const optionsReorderPseudoHeaders = fallbackOptions.reorderPseudoHeaders;
+    if (typeof mergedOptions === "object") {
+      const optionsReorderHeaders = mergedOptions.reorderHeaders;
+      const optionsReorderPseudoHeaders = mergedOptions.reorderPseudoHeaders;
 
       if (typeof optionsReorderHeaders !== "undefined") {
         reorderHeaders = optionsReorderHeaders;
@@ -127,13 +129,12 @@ async function connect(authority, listener, options) {
       }
     }
 
-    if (fallbackOptions.preferChromeHeaderOrder) {
+    if (mergedOptions.preferChromeHeaderOrder) {
       preferChromeHeaderOrder = true;
     }
 
     const areImpossibleOptions =
-      (fallbackOptions.reorderPseudoHeaders ||
-        fallbackOptions.reorderHeaders) &&
+      (mergedOptions.reorderPseudoHeaders || mergedOptions.reorderHeaders) &&
       preferChromeHeaderOrder;
 
     if (areImpossibleOptions) {
