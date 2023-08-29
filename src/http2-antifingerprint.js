@@ -15,27 +15,22 @@ async function connect(authority, listener, options) {
   let isAuthenticatedProxy = false;
   let proxy = "";
   let optionsProxy;
-  let onSwitchingProtocols = () => {};
 
-  if (typeof options === "object") {
+  if (options) {
     this._http2antifingerprintListener = listener;
     this._http2antifingerprintOptions = options;
+
     optionsProxy = options.proxy;
 
-    if (optionsProxy) {
-      if (optionsProxy.user || optionsProxy.password) {
-        isAuthenticatedProxy = true;
-        proxy = `${optionsProxy.scheme}://${optionsProxy.user}:${optionsProxy.password}@${optionsProxy.host}:${optionsProxy.port}`;
-      } else {
-        proxy = `${optionsProxy.scheme}://${optionsProxy.host}:${optionsProxy.port}`;
-      }
+    if (optionsProxy?.user || optionsProxy?.password) {
+      isAuthenticatedProxy = true;
+
+      proxy = `${optionsProxy.scheme}://${optionsProxy.user}:${optionsProxy.password}@${optionsProxy.host}:${optionsProxy.port}`;
+    } else if (optionsProxy) {
+      proxy = `${optionsProxy.scheme}://${optionsProxy.host}:${optionsProxy.port}`;
     }
 
-    const optionsOnSwitchingProtocols = options.onSwitchingProtocols;
-
-    if (optionsOnSwitchingProtocols) {
-      onSwitchingProtocols = optionsOnSwitchingProtocols;
-    }
+    onSwitchingProtocols = options.onSwitchingProtocols || (() => {});
   }
 
   let client;
@@ -48,11 +43,13 @@ async function connect(authority, listener, options) {
 
   if (proxy) {
     const headers = {};
+
     if (isAuthenticatedProxy) {
       headers["Proxy-Authorization"] = `Basic ${Buffer.from(
         `${optionsProxy.user}:${optionsProxy.password}`
       ).toString("base64")}`;
     }
+
     const request = http.request({
       method: "CONNECT",
       host: optionsProxy.host,
@@ -80,14 +77,10 @@ async function connect(authority, listener, options) {
       });
     });
   } else {
-    let sessionOptions = new AntiFingerprintClientSessionOptions().get();
-
-    if (options) {
-      sessionOptions = {
-        ...sessionOptions,
-        ...options,
-      };
-    }
+    const sessionOptions = {
+      ...new AntiFingerprintClientSessionOptions().get(),
+      ...options,
+    };
 
     client = http2.connect(authority, sessionOptions, listener);
   }
@@ -116,17 +109,17 @@ async function connect(authority, listener, options) {
       ...this._http2antifingerprintOptions,
     };
 
-    if (typeof mergedOptions === "object") {
-      const optionsReorderHeaders = mergedOptions.reorderHeaders;
-      const optionsReorderPseudoHeaders = mergedOptions.reorderPseudoHeaders;
+    const {
+      reorderHeaders: optionsReorderHeaders,
+      reorderPseudoHeaders: optionsReorderPseudoHeaders,
+    } = mergedOptions;
 
-      if (typeof optionsReorderHeaders !== "undefined") {
-        reorderHeaders = optionsReorderHeaders;
-      }
+    if (optionsReorderHeaders) {
+      reorderHeaders = optionsReorderHeaders;
+    }
 
-      if (typeof optionsReorderPseudoHeaders !== "undefined") {
-        reorderPseudoHeaders = optionsReorderPseudoHeaders;
-      }
+    if (optionsReorderPseudoHeaders) {
+      reorderPseudoHeaders = optionsReorderPseudoHeaders;
     }
 
     if (mergedOptions.preferChromeHeaderOrder) {
