@@ -104,4 +104,68 @@ describe("request", () => {
       client.destroy();
     }
   });
+
+  it("should throw after impossible merged options from connect and request contexts", async () => {
+    const options = {
+      reorderHeaders: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const actual = () =>
+      client.request("/api", http2options, {
+        preferChromeHeaderOrder: true,
+      });
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should throw after impossible merged options from undefined connect and request contexts", async () => {
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener
+    );
+
+    const actual = () =>
+      client.request("/api", http2options, {
+        preferChromeHeaderOrder: true,
+      });
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should throw after impossible merged options from connect and undefined request contexts", async () => {
+    const options = {
+      reorderHeaders: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        preferChromeHeaderOrder: true,
+      }
+    );
+
+    const actual = () => client.request("/api", http2options, options);
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
 });
