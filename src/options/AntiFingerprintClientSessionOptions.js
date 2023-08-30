@@ -4,7 +4,7 @@ const { randint } = require("../randint.js");
 
 const PORT = 443;
 class AntiFingerprintClientSessionOptions {
-  get = () => ({
+  get = ({ tlsConnectOverrides } = {}) => ({
     settings: {
       headerTableSize: randint(0, 2 ** 16 - 1),
       enablePush: !!randint(0, 1),
@@ -16,13 +16,17 @@ class AntiFingerprintClientSessionOptions {
     },
     createConnection: (url) => {
       const ciphers = tls.getCiphers();
+
       ciphers.sort(() => (!!randint(0, 1) ? 1 : -1));
+
       for (let i = 0; i < randint(0, 2); i++) {
         ciphers.pop();
       }
+
       return tls.connect(PORT, url.host, {
         ALPNProtocols: ["h2"],
         ciphers: ciphers.join(":").toUpperCase(),
+        ...tlsConnectOverrides,
       });
     },
   });
