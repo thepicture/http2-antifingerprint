@@ -168,4 +168,62 @@ describe("request", () => {
       client.destroy();
     }
   });
+
+  it("should override tls connect options", async () => {
+    // \x02h2\bhttp/1.1\bspdy/3.1
+    const expected = [
+      2, 104, 50, 8, 104, 116, 116, 112, 47, 49, 46, 49, 8, 115, 112, 100, 121,
+      47, 51, 46, 49,
+    ];
+    const options = {
+      tlsConnectOverrides: {
+        ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
+      },
+    };
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const {
+      session: {
+        socket: {
+          _tlsOptions: { ALPNProtocols: actual },
+        },
+      },
+    } = await client.request("/api");
+
+    assert.deepStrictEqual(Array.from(actual), expected);
+  });
+
+  it("should access options applied", async () => {
+    const options = {
+      tlsConnectOverrides: {
+        ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
+      },
+    };
+    const expected = options;
+    const { _http2antifingerprintOptions: actual } =
+      await http2antifingerprint.connect(
+        "https://example.com",
+        listener,
+        options
+      );
+
+    assert.deepStrictEqual(actual, expected);
+  });
+
+  it("should access listener applied", async () => {
+    const expected = listener;
+    const options = {};
+    const { _http2antifingerprintListener: actual } =
+      await http2antifingerprint.connect(
+        "https://example.com",
+        listener,
+        options
+      );
+
+    assert.deepStrictEqual(actual, expected);
+  });
 });

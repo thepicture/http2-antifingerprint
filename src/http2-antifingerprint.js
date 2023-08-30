@@ -71,6 +71,7 @@ async function connect(authority, listener, options) {
                   host,
                   socket: socket,
                   ALPNProtocols: ["h2"],
+                  ...tlsConnectOverrides,
                 })),
           })
         );
@@ -78,12 +79,19 @@ async function connect(authority, listener, options) {
     });
   } else {
     const sessionOptions = {
-      ...new AntiFingerprintClientSessionOptions().get(),
+      ...new AntiFingerprintClientSessionOptions().get({
+        ...(options?.tlsConnectOverrides && {
+          tlsConnectOverrides: options?.tlsConnectOverrides,
+        }),
+      }),
       ...options,
     };
 
     client = http2.connect(authority, sessionOptions, listener);
   }
+
+  client._http2antifingerprintOptions = this._http2antifingerprintOptions;
+  client._http2antifingerprintListener = this._http2antifingerprintListener;
 
   const originalRequest = client.request;
 

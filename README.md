@@ -83,6 +83,20 @@ Returns a `Promise<ClientHttp2Session>`.
 `[options]` can have `proxy` object consisting of `scheme`, `host` and `port` and may contain `user` or `password` properties.
 
 `[options]` can have `onSwitchingProtocols` callback that is getting called with the `http.IncomingMessage` argument. Since `1.1.4` supports any `http2` option, such as `createConnection`.
+Can have `tlsConnectOverrides` that override the existing default TLS values. Might be useful for encryption setting override or for custom ALPN protocols:
+
+```js
+const options = {
+  tlsConnectOverrides: {
+    ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
+  },
+};
+const client = await http2antifingerprint.connect(
+  "https://example.com",
+  listener,
+  options
+);
+```
 
 ### Creating a request
 
