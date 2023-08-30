@@ -71,6 +71,7 @@ async function connect(authority, listener, options) {
                   host,
                   socket: socket,
                   ALPNProtocols: ["h2"],
+                  ...tlsConnectOverrides,
                 })),
           })
         );
@@ -78,7 +79,11 @@ async function connect(authority, listener, options) {
     });
   } else {
     const sessionOptions = {
-      ...new AntiFingerprintClientSessionOptions().get(),
+      ...new AntiFingerprintClientSessionOptions().get({
+        ...(options?.tlsConnectOverrides && {
+          tlsConnectOverrides: options?.tlsConnectOverrides,
+        }),
+      }),
       ...options,
     };
 
