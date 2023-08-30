@@ -196,4 +196,34 @@ describe("request", () => {
 
     assert.deepStrictEqual(Array.from(actual), expected);
   });
+
+  it("should access options applied", async () => {
+    const options = {
+      tlsConnectOverrides: {
+        ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
+      },
+    };
+    const expected = options;
+    const { _http2antifingerprintOptions: actual } =
+      await http2antifingerprint.connect(
+        "https://example.com",
+        listener,
+        options
+      );
+
+    assert.deepStrictEqual(actual, expected);
+  });
+
+  it("should access listener applied", async () => {
+    const expected = listener;
+    const options = {};
+    const { _http2antifingerprintListener: actual } =
+      await http2antifingerprint.connect(
+        "https://example.com",
+        listener,
+        options
+      );
+
+    assert.deepStrictEqual(actual, expected);
+  });
 });

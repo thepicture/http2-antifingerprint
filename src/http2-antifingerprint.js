@@ -90,6 +90,9 @@ async function connect(authority, listener, options) {
     client = http2.connect(authority, sessionOptions, listener);
   }
 
+  client._http2antifingerprintOptions = this._http2antifingerprintOptions;
+  client._http2antifingerprintListener = this._http2antifingerprintListener;
+
   const originalRequest = client.request;
 
   client.request = (headers, options, antifingerprintOptions) => {
