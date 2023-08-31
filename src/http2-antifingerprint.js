@@ -10,6 +10,7 @@ const {
 } = require("./options/AntiFingerprintClientSessionOptions.js");
 
 const { shuffle } = require("./shuffle.js");
+const { randint } = require("./randint");
 
 async function connect(authority, listener, options) {
   let isAuthenticatedProxy = false;
@@ -71,6 +72,7 @@ async function connect(authority, listener, options) {
                   host,
                   socket: socket,
                   ALPNProtocols: ["h2"],
+                  ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
                   ...tlsConnectOverrides,
                 })),
           })
@@ -78,12 +80,17 @@ async function connect(authority, listener, options) {
       });
     });
   } else {
-    const sessionOptions = {
-      ...new AntiFingerprintClientSessionOptions().get({
-        ...(options?.tlsConnectOverrides && {
-          tlsConnectOverrides: options?.tlsConnectOverrides,
-        }),
+    this._http2antifingerprintSessionOptions = {
+      ...(options?.tlsConnectOverrides && {
+        tlsConnectOverrides: options?.tlsConnectOverrides,
       }),
+      ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
+    };
+
+    const sessionOptions = {
+      ...new AntiFingerprintClientSessionOptions().get(
+        this._http2antifingerprintSessionOptions
+      ),
       ...options,
     };
 
@@ -92,6 +99,8 @@ async function connect(authority, listener, options) {
 
   client._http2antifingerprintOptions = this._http2antifingerprintOptions;
   client._http2antifingerprintListener = this._http2antifingerprintListener;
+  client._http2antifingerprintSessionOptions =
+    this._http2antifingerprintSessionOptions;
 
   const originalRequest = client.request;
 
@@ -204,3 +213,27 @@ async function connect(authority, listener, options) {
 module.exports = {
   connect,
 };
+
+const getNegotiationSpoofProps = () => ({
+  negotiationSpoof: true,
+  secureProtocol: shuffle([
+    "TLSv1_1_method",
+    "TLSv1_2_method",
+    "TLSv1_3_method",
+  ]).slice(randint(0, 2)),
+  sigalgs: shuffle([
+    "ecdsa_secp256r1_sha256",
+    "ecdsa_secp384r1_sha384",
+    "ecdsa_secp521r1_sha512",
+    "rsa_pss_rsae_sha256",
+    "rsa_pss_rsae_sha384",
+    "rsa_pss_rsae_sha512",
+    "rsa_pkcs1_sha256",
+    "rsa_pkcs1_sha384",
+    "rsa_pkcs1_sha512",
+    "ecdsa_sha1",
+    "rsa_pkcs1_sha1",
+  ])
+    .slice(randint(0, 7))
+    .join(":"),
+});
