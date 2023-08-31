@@ -117,6 +117,8 @@ In such case, header ordering will be chrome, because many sites reject non-chro
 Can have `strictMode` boolean property. If specified, the `client.request` method call without second and third arguments will reject with error.
 `false` by default.
 
+`negotiationSpoof` allows to spoof `tls`'s `secureProtocol` and `sigals` list during client hello stage, if set to `true`. Defaults to `false`.
+
 **Notice**: if `preferChromeHeaderOrder` is `true`, it is not required to set `reorderPseudoHeaders` and `reorderHeaders` properties to `false` as they will default to `false`.
 
 ## Test
