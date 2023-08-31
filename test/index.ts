@@ -226,4 +226,32 @@ describe("request", () => {
 
     assert.deepStrictEqual(actual, expected);
   });
+
+  it("should work with negotiation spoof", async () => {
+    const expected = true;
+    const options = {
+      negotiationSpoof: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const {
+      _http2antifingerprintSessionOptions: {
+        negotiationSpoof: actualNegotiationSpoof,
+      },
+    } = client;
+    const actualFunctionCall = () =>
+      client.request("/api", http2options, options);
+
+    try {
+      assert.doesNotThrow(actualFunctionCall);
+      assert.strictEqual(actualNegotiationSpoof, expected);
+    } finally {
+      client.destroy();
+    }
+  });
 });
