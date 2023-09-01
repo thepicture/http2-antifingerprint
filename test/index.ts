@@ -254,4 +254,26 @@ describe("request", () => {
       client.destroy();
     }
   });
+
+  it("should work with negotiation spoof", async () => {
+    const expected = true;
+    const options = {
+      curveSpoof: true,
+    };
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const {
+      _http2antifingerprintSessionOptions: { curveSpoof: actualCurveSpoof },
+    } = client;
+
+    try {
+      assert.strictEqual(actualCurveSpoof, expected);
+    } finally {
+      client.destroy();
+    }
+  });
 });
