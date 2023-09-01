@@ -119,6 +119,8 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 
 `negotiationSpoof` allows to spoof `tls`'s `secureProtocol` and `sigals` list during client hello stage, if set to `true`. Defaults to `false`.
 
+`curveSpoof` allows to spoof the elliptic curves. Defaults to `tls.DEFAULT_ECDH_CURVE`.
+
 **Notice**: if `preferChromeHeaderOrder` is `true`, it is not required to set `reorderPseudoHeaders` and `reorderHeaders` properties to `false` as they will default to `false`.
 
 ## Test

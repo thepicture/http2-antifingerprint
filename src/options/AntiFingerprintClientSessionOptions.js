@@ -29,6 +29,10 @@ class AntiFingerprintClientSessionOptions {
         delete clonedOptions.negotiationSpoof;
       }
 
+      if (clonedOptions.curveSpoof) {
+        delete clonedOptions.curveSpoof;
+      }
+
       return tls.connect(PORT, url.host, {
         ALPNProtocols: ["h2"],
         ciphers: ciphers.join(":").toUpperCase(),

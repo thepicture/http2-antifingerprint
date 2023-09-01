@@ -1,3 +1,4 @@
+const { getCurves } = require("node:crypto");
 const http = require("node:http");
 const http2 = require("node:http2");
 
@@ -85,6 +86,7 @@ async function connect(authority, listener, options) {
         tlsConnectOverrides: options?.tlsConnectOverrides,
       }),
       ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
+      ...(options?.curveSpoof && getCurveSpoofProps()),
     };
 
     const sessionOptions = {
@@ -237,3 +239,14 @@ const getNegotiationSpoofProps = () => ({
     .slice(randint(0, 7))
     .join(":"),
 });
+
+const getCurveSpoofProps = () => {
+  const curves = getCurves();
+
+  return {
+    curveSpoof: true,
+    ecdhCurve: shuffle(curves)
+      .slice(randint(0, curves.length - 2))
+      .join(":"),
+  };
+};
