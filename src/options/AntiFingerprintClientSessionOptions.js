@@ -1,6 +1,8 @@
+"use strict";
+
 const tls = require("node:tls");
 
-const { randint } = require("../randint.js");
+const { randint } = require("../randint");
 
 const PORT = 443;
 class AntiFingerprintClientSessionOptions {
@@ -31,6 +33,10 @@ class AntiFingerprintClientSessionOptions {
 
       if (clonedOptions.curveSpoof) {
         delete clonedOptions.curveSpoof;
+      }
+
+      if (clonedOptions.spoofSecureOptions) {
+        delete clonedOptions.spoofSecureOptions;
       }
 
       return tls.connect(PORT, url.host, {
