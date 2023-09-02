@@ -276,4 +276,29 @@ describe("request", () => {
       client.destroy();
     }
   });
+
+  it("should allow to spoof secure options", async () => {
+    const expected = true;
+    const options = {
+      spoofSecureOptions: true,
+    };
+
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const {
+      _http2antifingerprintSessionOptions: {
+        spoofSecureOptions: actualSpoofSecureOptions,
+      },
+    } = client;
+
+    try {
+      assert.strictEqual(actualSpoofSecureOptions, expected);
+    } finally {
+      client.destroy();
+    }
+  });
 });

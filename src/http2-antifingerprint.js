@@ -1,22 +1,23 @@
-const { getCurves } = require("node:crypto");
-const http = require("node:http");
-const http2 = require("node:http2");
+"use strict";
 
 const tls = require("node:tls");
+const http = require("node:http");
+const http2 = require("node:http2");
+const { getCurves, constants } = require("node:crypto");
 
+const { shuffle } = require("./shuffle");
+const { randint } = require("./randint");
+const { bitmask } = require("./bitmask");
 const config = require("./options/const");
-
 const {
   AntiFingerprintClientSessionOptions,
-} = require("./options/AntiFingerprintClientSessionOptions.js");
-
-const { shuffle } = require("./shuffle.js");
-const { randint } = require("./randint");
+} = require("./options/AntiFingerprintClientSessionOptions");
 
 async function connect(authority, listener, options) {
-  let isAuthenticatedProxy = false;
   let proxy = "";
   let optionsProxy;
+  let isAuthenticatedProxy = false;
+  let onSwitchingProtocols = () => {};
 
   if (options) {
     this._http2antifingerprintListener = listener;
@@ -32,7 +33,7 @@ async function connect(authority, listener, options) {
       proxy = `${optionsProxy.scheme}://${optionsProxy.host}:${optionsProxy.port}`;
     }
 
-    onSwitchingProtocols = options.onSwitchingProtocols || (() => {});
+    onSwitchingProtocols = options.onSwitchingProtocols || onSwitchingProtocols;
   }
 
   let client;
@@ -74,6 +75,8 @@ async function connect(authority, listener, options) {
                   socket: socket,
                   ALPNProtocols: ["h2"],
                   ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
+                  ...(options?.curveSpoof && getCurveSpoofProps()),
+                  ...(options?.spoofSecureOptions && getSecureOptions()),
                   ...tlsConnectOverrides,
                 })),
           })
@@ -87,6 +90,7 @@ async function connect(authority, listener, options) {
       }),
       ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
       ...(options?.curveSpoof && getCurveSpoofProps()),
+      ...(options?.spoofSecureOptions && getSecureOptions()),
     };
 
     const sessionOptions = {
@@ -104,7 +108,7 @@ async function connect(authority, listener, options) {
   client._http2antifingerprintSessionOptions =
     this._http2antifingerprintSessionOptions;
 
-  const originalRequest = client.request;
+  const { request: originalRequest } = client;
 
   client.request = (headers, options, antifingerprintOptions) => {
     let reorderHeaders = true;
@@ -224,17 +228,17 @@ const getNegotiationSpoofProps = () => ({
     "TLSv1_3_method",
   ]).slice(randint(0, 2)),
   sigalgs: shuffle([
-    "ecdsa_secp256r1_sha256",
-    "ecdsa_secp384r1_sha384",
-    "ecdsa_secp521r1_sha512",
-    "rsa_pss_rsae_sha256",
-    "rsa_pss_rsae_sha384",
-    "rsa_pss_rsae_sha512",
+    "ecdsa_sha1",
+    "rsa_pkcs1_sha1",
     "rsa_pkcs1_sha256",
     "rsa_pkcs1_sha384",
     "rsa_pkcs1_sha512",
-    "ecdsa_sha1",
-    "rsa_pkcs1_sha1",
+    "rsa_pss_rsae_sha256",
+    "rsa_pss_rsae_sha384",
+    "rsa_pss_rsae_sha512",
+    "ecdsa_secp256r1_sha256",
+    "ecdsa_secp384r1_sha384",
+    "ecdsa_secp521r1_sha512",
   ])
     .slice(randint(0, 7))
     .join(":"),
@@ -250,3 +254,19 @@ const getCurveSpoofProps = () => {
       .join(":"),
   };
 };
+
+const getSecureOptions = () => ({
+  spoofSecureOptions: true,
+  secureOptions: bitmask(
+    shuffle([
+      constants.SSL_OP_ALL,
+      constants.SSL_OP_NO_SSLv2,
+      constants.SSL_OP_NO_SSLv3,
+      constants.SSL_OP_NO_TICKET,
+      constants.SSL_OP_NO_COMPRESSION,
+      constants.SSL_OP_CRYPTOPRO_TLSEXT_BUG,
+      constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
+      constants.SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION,
+    ]).slice(randint(0, 6))
+  ),
+});

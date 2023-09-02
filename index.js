@@ -1,7 +1,7 @@
-const http2antifingerprint = require("./src/http2-antifingerprint.js");
+const http2antifingerprint = require("./src/http2-antifingerprint");
 const {
   AntiFingerprintClientSessionOptions,
-} = require("./src/options/AntiFingerprintClientSessionOptions.js");
+} = require("./src/options/AntiFingerprintClientSessionOptions");
 
 module.exports = {
   http2antifingerprint,
