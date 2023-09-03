@@ -113,7 +113,9 @@ async function connect(authority, listener, options) {
   client.request = (headers, options, antifingerprintOptions) => {
     let reorderHeaders = true;
     let reorderPseudoHeaders = true;
+    let banOriginalHeaderOrder = false;
     let preferChromeHeaderOrder = false;
+    let banOriginalPseudoHeaderOrder = false;
 
     const isWrongMethodCallInStrictMode =
       this._http2antifingerprintOptions?.strictMode &&
@@ -135,18 +137,28 @@ async function connect(authority, listener, options) {
     const {
       reorderHeaders: optionsReorderHeaders,
       reorderPseudoHeaders: optionsReorderPseudoHeaders,
+      banOriginalHeaderOrder: optionsBanOriginalHeaderOrder,
+      banOriginalPseudoHeaderOrder: optionsBanOriginalPseudoHeaderOrder,
     } = mergedOptions;
 
-    if (optionsReorderHeaders) {
+    if (optionsReorderHeaders !== undefined) {
       reorderHeaders = optionsReorderHeaders;
     }
 
-    if (optionsReorderPseudoHeaders) {
+    if (optionsReorderPseudoHeaders !== undefined) {
       reorderPseudoHeaders = optionsReorderPseudoHeaders;
     }
 
-    if (mergedOptions.preferChromeHeaderOrder) {
-      preferChromeHeaderOrder = true;
+    if (optionsBanOriginalHeaderOrder !== undefined) {
+      banOriginalHeaderOrder = optionsBanOriginalHeaderOrder;
+    }
+
+    if (optionsBanOriginalPseudoHeaderOrder !== undefined) {
+      banOriginalPseudoHeaderOrder = optionsBanOriginalPseudoHeaderOrder;
+    }
+
+    if (mergedOptions.preferChromeHeaderOrder !== undefined) {
+      preferChromeHeaderOrder = mergedOptions.preferChromeHeaderOrder;
     }
 
     const areImpossibleOptions =
@@ -190,20 +202,31 @@ async function connect(authority, listener, options) {
     }
 
     const newHeaders = {};
-    let keys = Object.getOwnPropertyNames(headers);
+    let originalKeys = Object.getOwnPropertyNames(headers);
+    let keys = [...originalKeys];
 
     if (reorderPseudoHeaders) {
-      keys = [
-        ...shuffle(keys.filter((key) => key.startsWith(":"))),
-        ...keys.filter((key) => !key.startsWith(":")),
-      ];
+      do {
+        keys = [
+          ...shuffle(keys.filter((key) => key.startsWith(":"))),
+          ...keys.filter((key) => !key.startsWith(":")),
+        ];
+      } while (
+        banOriginalPseudoHeaderOrder &&
+        keys.every((key, index) => originalKeys[index] === key)
+      );
     }
 
     if (reorderHeaders) {
-      keys = [
-        ...keys.filter((key) => key.startsWith(":")),
-        ...shuffle(keys.filter((key) => !key.startsWith(":"))),
-      ];
+      do {
+        keys = [
+          ...keys.filter((key) => key.startsWith(":")),
+          ...shuffle(keys.filter((key) => !key.startsWith(":"))),
+        ];
+      } while (
+        banOriginalHeaderOrder &&
+        keys.every((key, index) => originalKeys[index] === key)
+      );
     }
 
     for (const key of keys) {
