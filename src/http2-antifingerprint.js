@@ -115,6 +115,7 @@ async function connect(authority, listener, options) {
     let reorderPseudoHeaders = true;
     let banOriginalHeaderOrder = false;
     let preferChromeHeaderOrder = false;
+    let banOriginalPseudoHeaderOrder = false;
 
     const isWrongMethodCallInStrictMode =
       this._http2antifingerprintOptions?.strictMode &&
@@ -137,6 +138,7 @@ async function connect(authority, listener, options) {
       reorderHeaders: optionsReorderHeaders,
       reorderPseudoHeaders: optionsReorderPseudoHeaders,
       banOriginalHeaderOrder: optionsBanOriginalHeaderOrder,
+      banOriginalPseudoHeaderOrder: optionsBanOriginalPseudoHeaderOrder,
     } = mergedOptions;
 
     if (optionsReorderHeaders !== undefined) {
@@ -149,6 +151,10 @@ async function connect(authority, listener, options) {
 
     if (optionsBanOriginalHeaderOrder !== undefined) {
       banOriginalHeaderOrder = optionsBanOriginalHeaderOrder;
+    }
+
+    if (optionsBanOriginalPseudoHeaderOrder !== undefined) {
+      banOriginalPseudoHeaderOrder = optionsBanOriginalPseudoHeaderOrder;
     }
 
     if (mergedOptions.preferChromeHeaderOrder !== undefined) {
@@ -200,10 +206,15 @@ async function connect(authority, listener, options) {
     let keys = [...originalKeys];
 
     if (reorderPseudoHeaders) {
-      keys = [
-        ...shuffle(keys.filter((key) => key.startsWith(":"))),
-        ...keys.filter((key) => !key.startsWith(":")),
-      ];
+      do {
+        keys = [
+          ...shuffle(keys.filter((key) => key.startsWith(":"))),
+          ...keys.filter((key) => !key.startsWith(":")),
+        ];
+      } while (
+        banOriginalPseudoHeaderOrder &&
+        keys.every((key, index) => originalKeys[index] === key)
+      );
     }
 
     if (reorderHeaders) {

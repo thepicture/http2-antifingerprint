@@ -350,4 +350,127 @@ describe("request", () => {
     } finally {
     }
   });
+
+  it("should send headers with shuffled pseudo-header order and with static header order", async () => {
+    const notExpectedPseudoHeaderOrder = [
+      ":method",
+      ":authority",
+      ":scheme",
+      ":path",
+    ];
+    const expectedHeaderOrder = [
+      "user-agent",
+      "accept-encoding",
+      "accept-language",
+    ];
+    const client = await http2antifingerprint.connect("https://example.com");
+
+    for (let i = 0; i < 1024; i++) {
+      const { sentHeaders: actual } = await client.request(
+        {
+          ":method": "GET",
+          ":authority": "example.com",
+          ":scheme": "https",
+          ":path": "/api",
+          "user-agent": "node",
+          "accept-encoding": "gzip, deflate, br",
+          "accept-language": "en-US",
+        },
+        {},
+        {
+          reorderHeaders: false,
+          banOriginalPseudoHeaderOrder: true,
+        }
+      );
+
+      assert.notDeepStrictEqual(
+        ObjectKeys(actual).slice(0, 4),
+        notExpectedPseudoHeaderOrder
+      );
+      assert.deepStrictEqual(ObjectKeys(actual).slice(4), expectedHeaderOrder);
+    }
+
+    try {
+      client.destroy();
+    } finally {
+    }
+  });
+
+  it("should send headers with shuffled pseudo-header order and with shuffled header order", async () => {
+    const notExpectedHeaderOrder = [
+      ":method",
+      ":authority",
+      ":scheme",
+      ":path",
+      "user-agent",
+      "accept-encoding",
+      "accept-language",
+    ];
+    const client = await http2antifingerprint.connect("https://example.com");
+
+    for (let i = 0; i < 1024; i++) {
+      const { sentHeaders: actual } = await client.request(
+        {
+          ":method": "GET",
+          ":authority": "example.com",
+          ":scheme": "https",
+          ":path": "/api",
+          "user-agent": "node",
+          "accept-encoding": "gzip, deflate, br",
+          "accept-language": "en-US",
+        },
+        {},
+        {
+          banOriginalPseudoHeaderOrder: true,
+          banOriginalHeaderOrder: true,
+        }
+      );
+
+      assert.notDeepStrictEqual(ObjectKeys(actual), notExpectedHeaderOrder);
+    }
+
+    try {
+      client.destroy();
+    } finally {
+    }
+  });
+
+  it("should send static pseudo- and original headers", async () => {
+    const expected = [
+      ":method",
+      ":authority",
+      ":scheme",
+      ":path",
+      "user-agent",
+      "accept-encoding",
+      "accept-language",
+    ];
+    const client = await http2antifingerprint.connect("https://example.com");
+
+    for (let i = 0; i < 1024; i++) {
+      const { sentHeaders: actual } = await client.request(
+        {
+          ":method": "GET",
+          ":authority": "example.com",
+          ":scheme": "https",
+          ":path": "/api",
+          "user-agent": "node",
+          "accept-encoding": "gzip, deflate, br",
+          "accept-language": "en-US",
+        },
+        {},
+        {
+          reorderHeaders: false,
+          reorderPseudoHeaders: false,
+        }
+      );
+
+      assert.deepStrictEqual(ObjectKeys(actual), expected);
+    }
+
+    try {
+      client.destroy();
+    } finally {
+    }
+  });
 });
