@@ -9,6 +9,7 @@ process.on("uncaughtException", process.exit);
 
 nock("https://example.com").get("*").reply();
 const listener = () => {};
+const { keys: ObjectKeys } = Object;
 
 describe("client instantiation", () => {
   it("should instantiate client", async () => {
@@ -299,6 +300,54 @@ describe("request", () => {
       assert.strictEqual(actualSpoofSecureOptions, expected);
     } finally {
       client.destroy();
+    }
+  });
+
+  it("should send headers with shuffled order and with static pseudo-header order", async () => {
+    const expectedPseudoHeaderOrder = [
+      ":method",
+      ":authority",
+      ":scheme",
+      ":path",
+    ];
+    const notExpectedHeaderOrder = [
+      "user-agent",
+      "accept-encoding",
+      "accept-language",
+    ];
+    const client = await http2antifingerprint.connect("https://example.com");
+
+    for (let i = 0; i < 1024; i++) {
+      const { sentHeaders: actual } = await client.request(
+        {
+          ":method": "GET",
+          ":authority": "example.com",
+          ":scheme": "https",
+          ":path": "/api",
+          "user-agent": "node",
+          "accept-encoding": "gzip, deflate, br",
+          "accept-language": "en-US",
+        },
+        {},
+        {
+          reorderPseudoHeaders: false,
+          banOriginalHeaderOrder: true,
+        }
+      );
+
+      assert.deepStrictEqual(
+        ObjectKeys(actual).slice(0, 4),
+        expectedPseudoHeaderOrder
+      );
+      assert.notDeepStrictEqual(
+        ObjectKeys(actual).slice(4),
+        notExpectedHeaderOrder
+      );
+    }
+
+    try {
+      client.destroy();
+    } finally {
     }
   });
 });

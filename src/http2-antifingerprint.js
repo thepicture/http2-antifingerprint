@@ -113,6 +113,7 @@ async function connect(authority, listener, options) {
   client.request = (headers, options, antifingerprintOptions) => {
     let reorderHeaders = true;
     let reorderPseudoHeaders = true;
+    let banOriginalHeaderOrder = false;
     let preferChromeHeaderOrder = false;
 
     const isWrongMethodCallInStrictMode =
@@ -135,18 +136,23 @@ async function connect(authority, listener, options) {
     const {
       reorderHeaders: optionsReorderHeaders,
       reorderPseudoHeaders: optionsReorderPseudoHeaders,
+      banOriginalHeaderOrder: optionsBanOriginalHeaderOrder,
     } = mergedOptions;
 
-    if (optionsReorderHeaders) {
+    if (optionsReorderHeaders !== undefined) {
       reorderHeaders = optionsReorderHeaders;
     }
 
-    if (optionsReorderPseudoHeaders) {
+    if (optionsReorderPseudoHeaders !== undefined) {
       reorderPseudoHeaders = optionsReorderPseudoHeaders;
     }
 
-    if (mergedOptions.preferChromeHeaderOrder) {
-      preferChromeHeaderOrder = true;
+    if (optionsBanOriginalHeaderOrder !== undefined) {
+      banOriginalHeaderOrder = optionsBanOriginalHeaderOrder;
+    }
+
+    if (mergedOptions.preferChromeHeaderOrder !== undefined) {
+      preferChromeHeaderOrder = mergedOptions.preferChromeHeaderOrder;
     }
 
     const areImpossibleOptions =
@@ -190,7 +196,8 @@ async function connect(authority, listener, options) {
     }
 
     const newHeaders = {};
-    let keys = Object.getOwnPropertyNames(headers);
+    let originalKeys = Object.getOwnPropertyNames(headers);
+    let keys = [...originalKeys];
 
     if (reorderPseudoHeaders) {
       keys = [
@@ -200,10 +207,15 @@ async function connect(authority, listener, options) {
     }
 
     if (reorderHeaders) {
-      keys = [
-        ...keys.filter((key) => key.startsWith(":")),
-        ...shuffle(keys.filter((key) => !key.startsWith(":"))),
-      ];
+      do {
+        keys = [
+          ...keys.filter((key) => key.startsWith(":")),
+          ...shuffle(keys.filter((key) => !key.startsWith(":"))),
+        ];
+      } while (
+        banOriginalHeaderOrder &&
+        keys.every((key, index) => originalKeys[index] === key)
+      );
     }
 
     for (const key of keys) {
