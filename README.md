@@ -36,7 +36,7 @@ const { http2antifingerprint } = require("http2-antifingerprint"); // particular
       ":scheme": "https",
       ":path": "/",
       "user-agent": "node",
-      "accept-encoding": "gzip, deflare, br",
+      "accept-encoding": "gzip, deflate, br",
       "accept-language": "en-US",
     },
     {}, // Client session request options from node:http2
@@ -98,6 +98,10 @@ const client = await http2antifingerprint.connect(
 );
 ```
 
+`banOriginalHeaderOrder` - allows to never send the original order given in `request` options
+
+`banOriginalPseudoHeaderOrder` - allows to never send the original pseudo-header order given in `request` options
+
 ### Creating a request
 
 `const request = client.request([headers], [client session options], [header options]);`
@@ -120,6 +124,8 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 `negotiationSpoof` allows to spoof `tls`'s `secureProtocol` and `sigals` list during client hello stage, if set to `true`. Defaults to `false`.
 
 `curveSpoof` allows to spoof the elliptic curves. Defaults to `tls.DEFAULT_ECDH_CURVE`.
+
+`spoofSecureOptions` allows to imitate various OpenSSL implementations to execute during hello stage. Defaults to `false`.
 
 **Notice**: if `preferChromeHeaderOrder` is `true`, it is not required to set `reorderPseudoHeaders` and `reorderHeaders` properties to `false` as they will default to `false`.
 
