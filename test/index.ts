@@ -473,4 +473,30 @@ describe("request", () => {
     } finally {
     }
   });
+
+  it("should spoof cipher preferences", async () => {
+    const expected = true;
+    const options = {
+      spoofHonorCipherOrder: true,
+    };
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      options
+    );
+
+    const {
+      _http2antifingerprintSessionOptions: { spoofHonorCipherOrder: actual },
+    } = client;
+    const actualFunctionCall = () =>
+      client.request("/api", http2options, options);
+
+    try {
+      assert.doesNotThrow(actualFunctionCall);
+      assert.strictEqual(actual, expected);
+    } finally {
+      client.destroy();
+    }
+  });
 });

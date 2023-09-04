@@ -91,6 +91,7 @@ async function connect(authority, listener, options) {
       ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
       ...(options?.curveSpoof && getCurveSpoofProps()),
       ...(options?.spoofSecureOptions && getSecureOptions()),
+      ...(options?.spoofHonorCipherOrder && getSpoofHonorCipherOrderProps()),
     };
 
     const sessionOptions = {
@@ -292,4 +293,9 @@ const getSecureOptions = () => ({
       constants.SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION,
     ]).slice(randint(0, 6))
   ),
+});
+
+const getSpoofHonorCipherOrderProps = () => ({
+  spoofHonorCipherOrder: true,
+  honorCipherOrder: Math.random() > 0.5,
 });
