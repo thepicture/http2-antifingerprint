@@ -499,4 +499,189 @@ describe("request", () => {
       client.destroy();
     }
   });
+
+  it("should work with unauthenticated proxy", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        port: 80,
+      }
+    );
+
+    const actual = () => client.request("/api", {}, {});
+
+    try {
+      assert.doesNotThrow(actual);
+      assert.ok(client._http2antifingerprintOptions);
+      assert.ok(client._http2antifingerprintOptions.host);
+      assert.ok(client._http2antifingerprintOptions.port);
+      assert.strictEqual(client._http2antifingerprintOptions.user, undefined);
+      assert.strictEqual(
+        client._http2antifingerprintOptions.password,
+        undefined
+      );
+      assert.ok(client._http2antifingerprintListener);
+      assert.ok(client._http2antifingerprintSessionOptions);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should work with authenticated proxy", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        user: "",
+        password: "",
+        port: 80,
+      }
+    );
+
+    const actual = () => client.request("/api", {}, {});
+
+    try {
+      assert.doesNotThrow(actual);
+      assert.ok(client._http2antifingerprintOptions);
+      assert.ok(client._http2antifingerprintOptions.host);
+      assert.ok(client._http2antifingerprintOptions.port);
+      assert.strictEqual(client._http2antifingerprintOptions.user, "");
+      assert.strictEqual(client._http2antifingerprintOptions.password, "");
+      assert.ok(client._http2antifingerprintListener);
+      assert.ok(client._http2antifingerprintSessionOptions);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should throw with authenticated proxy and contradiction options", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        user: "",
+        password: "",
+        port: 80,
+        strictMode: true,
+        preferChromeHeaderOrder: true,
+        reorderHeaders: true,
+      }
+    );
+
+    const actual = () => client.request("/api", {}, {});
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should work with authenticated proxy and semantically correct options", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        user: "",
+        password: "",
+        port: 80,
+        strictMode: true,
+        preferChromeHeaderOrder: true,
+        reorderHeaders: false,
+      }
+    );
+
+    const actual = () => client.request("/api", {}, {});
+
+    try {
+      assert.doesNotThrow(actual);
+      assert.ok(client._http2antifingerprintOptions);
+      assert.ok(client._http2antifingerprintOptions.host);
+      assert.ok(client._http2antifingerprintOptions.port);
+      assert.strictEqual(client._http2antifingerprintOptions.user, "");
+      assert.strictEqual(client._http2antifingerprintOptions.password, "");
+      assert.ok(client._http2antifingerprintListener);
+      assert.ok(client._http2antifingerprintSessionOptions);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should throw with authenticated proxy and contradiction options in requesst", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        user: "",
+        password: "",
+        port: 80,
+        strictMode: true,
+      }
+    );
+
+    const actual = () =>
+      client.request(
+        "/api",
+        {},
+        {
+          preferChromeHeaderOrder: true,
+          reorderHeaders: true,
+        }
+      );
+
+    try {
+      assert.throws(actual);
+    } finally {
+      client.destroy();
+    }
+  });
+
+  it("should work with authenticated proxy and semantically correct options", async () => {
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        scheme: "http",
+        host: "proxy.com",
+        user: "",
+        password: "",
+        port: 80,
+        strictMode: true,
+      }
+    );
+
+    const actual = () =>
+      client.request(
+        "/api",
+        {},
+        {
+          preferChromeHeaderOrder: true,
+          reorderHeaders: false,
+        }
+      );
+
+    try {
+      assert.doesNotThrow(actual);
+      assert.ok(client._http2antifingerprintOptions);
+      assert.ok(client._http2antifingerprintOptions.host);
+      assert.ok(client._http2antifingerprintOptions.port);
+      assert.strictEqual(client._http2antifingerprintOptions.user, "");
+      assert.strictEqual(client._http2antifingerprintOptions.password, "");
+      assert.ok(client._http2antifingerprintListener);
+      assert.ok(client._http2antifingerprintSessionOptions);
+    } finally {
+      client.destroy();
+    }
+  });
 });
