@@ -17,7 +17,7 @@ class AntiFingerprintClientSessionOptions {
       enableConnectProtocol: !!randint(0, 1),
     },
     createConnection: (url) => {
-      const ciphers = tls.getCiphers();
+      const ciphers = tls.getCiphers().slice(0, 16);
 
       ciphers.sort(() => (!!randint(0, 1) ? 1 : -1));
 
