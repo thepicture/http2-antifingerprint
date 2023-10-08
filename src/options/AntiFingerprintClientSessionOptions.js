@@ -44,6 +44,7 @@ class AntiFingerprintClientSessionOptions {
       }
 
       return tls.connect(PORT, url.host, {
+        servername: url.host,
         ALPNProtocols: ["h2"],
         ciphers: ciphers.join(":").toUpperCase(),
         ...clonedOptions.tlsConnectOverrides,
