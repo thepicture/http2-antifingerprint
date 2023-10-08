@@ -616,7 +616,7 @@ describe("request", () => {
     }
   });
 
-  it("should throw with authenticated proxy and contradiction options in requesst", async () => {
+  it("should throw with authenticated proxy and contradiction options in request", async () => {
     const client = await http2antifingerprint.connect(
       "https://example.com",
       listener,
