@@ -72,6 +72,7 @@ async function connect(authority, listener, options) {
               (() =>
                 tls.connect({
                   host,
+                  servername: host,
                   socket: socket,
                   ALPNProtocols: ["h2"],
                   ...(options?.negotiationSpoof && getNegotiationSpoofProps()),
