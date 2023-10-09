@@ -4,7 +4,7 @@ const tls = require("node:tls");
 
 const { randint } = require("../randint");
 
-const PORT = 443;
+const HTTPS_PORT = 443;
 class AntiFingerprintClientSessionOptions {
   get = (options = {}) => ({
     settings: {
@@ -43,7 +43,9 @@ class AntiFingerprintClientSessionOptions {
         delete clonedOptions.spoofHonorCipherOrder;
       }
 
-      return tls.connect(PORT, url.host, {
+      const { port } = url;
+
+      return tls.connect(port.length ? Number(port) : HTTPS_PORT, url.host, {
         servername: url.host,
         ALPNProtocols: ["h2"],
         ciphers: ciphers.join(":").toUpperCase(),
