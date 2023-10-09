@@ -1,5 +1,6 @@
 import nock from "nock";
 
+import { constants } from "node:http2";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
@@ -8,6 +9,10 @@ import http2antifingerprint from "..";
 process.on("uncaughtException", process.exit);
 
 nock("https://example.com").get("*").reply();
+nock("https://non-standard.com:666")
+  .get("*")
+  .reply(constants.HTTP_STATUS_OK, "<html></html>");
+
 const listener = () => {};
 const { keys: ObjectKeys } = Object;
 
@@ -683,5 +688,35 @@ describe("request", () => {
     } finally {
       client.destroy();
     }
+  });
+
+  it("should work with non-standard port", async (_, done) => {
+    const expected = "<html></html>";
+    const options = {};
+    const http2options = {};
+    const client = await http2antifingerprint.connect(
+      "https://non-standard.com:666"
+    );
+
+    let actual = "";
+
+    const request = client.request({ ":path": "/" }, http2options, options);
+    request.setEncoding("utf8");
+
+    request.on("error", assert.fail);
+
+    request.on("data", (chunk: string) => {
+      actual += chunk;
+    });
+
+    request.on("end", () => {
+      assert.strictEqual(actual, expected);
+
+      client.destroy();
+
+      done();
+    });
+
+    request.end();
   });
 });
