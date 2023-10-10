@@ -80,6 +80,7 @@ async function connect(authority, listener, options) {
                   ...(options?.spoofSecureOptions && getSecureOptions()),
                   ...tlsConnectOverrides,
                 })),
+            ...(options.ca && { ca: options.ca }),
           })
         );
       });
@@ -99,6 +100,7 @@ async function connect(authority, listener, options) {
       ...new AntiFingerprintClientSessionOptions().get(
         this._http2antifingerprintSessionOptions
       ),
+      ...(options?.ca && { ca: options.ca }),
       ...options,
     };
 

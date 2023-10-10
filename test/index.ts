@@ -719,4 +719,19 @@ describe("request", () => {
 
     request.end();
   });
+
+  it("should set cert option", async () => {
+    const expected = "stub";
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        ca: "stub",
+      }
+    );
+
+    let actual = client._http2antifingerprintOptions.ca;
+
+    assert.strictEqual(actual, expected);
+  });
 });
