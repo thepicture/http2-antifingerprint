@@ -102,6 +102,8 @@ const client = await http2antifingerprint.connect(
 
 `banOriginalPseudoHeaderOrder` - allows to never send the original pseudo-header order given in `request` options
 
+`ca` - specify `.pem` certificate
+
 ### Creating a request
 
 `const request = client.request([headers], [client session options], [header options]);`
