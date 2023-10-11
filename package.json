@@ -32,7 +32,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "20.5.7",
-    "nock": "13.3.3",
+    "@types/pem": "1.14.2",
+    "pem": "1.14.8",
     "tsx": "3.12.7"
   }
 }
