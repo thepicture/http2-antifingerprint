@@ -1,17 +1,13 @@
-import nock from "nock";
+import pem, { CertificateCreationResult } from "pem";
 
-import { constants } from "node:http2";
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { ClientHttp2Session, ClientHttp2Stream, Http2Server } from "node:http2";
+import { constants, createSecureServer } from "node:http2";
+import { describe, it, beforeEach, afterEach, after } from "node:test";
 
 import http2antifingerprint from "..";
 
 process.on("uncaughtException", process.exit);
-
-nock("https://example.com").get("*").reply();
-nock("https://non-standard.com:666")
-  .get("*")
-  .reply(constants.HTTP_STATUS_OK, "<html></html>");
 
 const listener = () => {};
 const { keys: ObjectKeys } = Object;
@@ -20,14 +16,71 @@ describe("client instantiation", () => {
   it("should instantiate client", async () => {
     const expected = true;
 
-    const actual = await http2antifingerprint.connect(
+    const client = await http2antifingerprint.connect(
       "https://example.com",
       listener
     );
+    const actual = "alpnProtocol" in client;
+    client.destroy();
 
-    actual.destroy();
+    assert.strictEqual(actual, expected);
+  });
+});
 
-    assert.strictEqual("alpnProtocol" in actual, expected);
+describe("connection", () => {
+  let server: Http2Server;
+  let clientKey: string;
+  let certificate: string;
+
+  beforeEach(async () => {
+    ({ clientKey, certificate } = await new Promise<CertificateCreationResult>(
+      (resolve) => {
+        pem.createCertificate(
+          { selfSigned: true },
+          (_, certificate: CertificateCreationResult) => resolve(certificate)
+        );
+      }
+    ));
+
+    server = createSecureServer({ key: clientKey, cert: certificate })
+      .on("stream", (stream) => {
+        stream.respond({
+          [constants.HTTP2_HEADER_CONTENT_TYPE]: "text/html; charset=utf-8",
+          [constants.HTTP2_HEADER_STATUS]: constants.HTTP_STATUS_OK,
+        });
+        stream.end("<html></html>");
+      })
+      .listen(3000);
+  });
+
+  afterEach(() => {
+    server.close();
+  });
+
+  it("should receive body", async (_, done) => {
+    const expected = "<body></body>";
+
+    const client: ClientHttp2Session = await http2antifingerprint.connect(
+      "https://localhost:3000",
+      {},
+      { ca: certificate }
+    );
+    const request: ClientHttp2Stream = client.request({
+      [constants.HTTP2_HEADER_PATH]: "/",
+    });
+    request.setEncoding("utf8");
+
+    let actual = "";
+    request.on("data", (chunk: string) => {
+      actual += chunk;
+    });
+    request.on("end", () => {
+      client.close();
+
+      assert.strictEqual(actual, expected);
+      done();
+    });
+    request.end();
   });
 });
 
@@ -689,6 +742,37 @@ describe("request", () => {
       client.destroy();
     }
   });
+});
+
+describe("non-standart port scope", () => {
+  let server: Http2Server;
+  let clientKey: string;
+  let certificate: string;
+
+  beforeEach(async () => {
+    ({ clientKey, certificate } = await new Promise<CertificateCreationResult>(
+      (resolve) => {
+        pem.createCertificate(
+          { selfSigned: true },
+          (_, certificate: CertificateCreationResult) => resolve(certificate)
+        );
+      }
+    ));
+
+    server = createSecureServer({ key: clientKey, cert: certificate })
+      .on("stream", (stream) => {
+        stream.respond({
+          [constants.HTTP2_HEADER_CONTENT_TYPE]: "text/html; charset=utf-8",
+          [constants.HTTP2_HEADER_STATUS]: constants.HTTP_STATUS_OK,
+        });
+        stream.end("<html></html>");
+      })
+      .listen(3000);
+  });
+
+  afterEach(() => {
+    server.close();
+  });
 
   it("should work with non-standard port", async (_, done) => {
     const expected = "<html></html>";
@@ -700,7 +784,11 @@ describe("request", () => {
 
     let actual = "";
 
-    const request = client.request({ ":path": "/" }, http2options, options);
+    const request = client.request(
+      { [constants.HTTP2_HEADER_PATH]: "/" },
+      http2options,
+      options
+    );
     request.setEncoding("utf8");
 
     request.on("error", assert.fail);
