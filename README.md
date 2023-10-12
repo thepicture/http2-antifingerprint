@@ -104,6 +104,8 @@ const client = await http2antifingerprint.connect(
 
 `ca` - specify `.pem` certificate
 
+`seed` - allows to set up http2 window values depending on numeric value. History acquired using `_http2antifingerprint.seedHistory`
+
 ### Creating a request
 
 `const request = client.request([headers], [client session options], [header options]);`
