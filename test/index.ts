@@ -3,7 +3,7 @@ import pem, { CertificateCreationResult } from "pem";
 import assert from "node:assert/strict";
 import { ClientHttp2Session, ClientHttp2Stream, Http2Server } from "node:http2";
 import { constants, createSecureServer } from "node:http2";
-import { describe, it, beforeEach, afterEach, after } from "node:test";
+import { describe, it, beforeEach, afterEach } from "node:test";
 
 import http2antifingerprint from "..";
 
@@ -741,6 +741,80 @@ describe("request", () => {
     } finally {
       client.destroy();
     }
+  });
+
+  it("should make seed generation idempotent", async () => {
+    const expected1 = [
+      {
+        headerTableSize: 0,
+        enablePush: true,
+        initialWindowSize: 595786089,
+        maxFrameSize: 23602621357,
+        maxConcurrentStreams: -496240228,
+        maxHeaderListSize: -628768293,
+        enableConnectProtocol: true,
+      },
+    ];
+    const expected2 = [
+      {
+        headerTableSize: 551400888,
+        enablePush: true,
+        initialWindowSize: 92287800,
+        maxFrameSize: -126913421755,
+        maxConcurrentStreams: -628768293,
+        maxHeaderListSize: -183510957,
+        enableConnectProtocol: true,
+      },
+    ];
+    const client1 = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        seed: 0,
+      }
+    );
+
+    client1.request("/");
+    client1.request("/");
+    client1.request("/");
+
+    let actual1 = client1._http2antifingerprint.seedHistory;
+
+    client1.request("/");
+    client1.request("/");
+    client1.request("/");
+
+    let actual2 = client1._http2antifingerprint.seedHistory;
+
+    assert.deepEqual(actual1, expected1);
+    assert.deepEqual(actual2, expected1);
+
+    const client2 = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        seed: 1,
+      }
+    );
+
+    client2.request("/");
+    client2.request("/");
+    client2.request("/");
+
+    let actual3 = client2._http2antifingerprint.seedHistory;
+
+    client2.request("/");
+    client2.request("/");
+    client2.request("/");
+
+    let actual4 = client2._http2antifingerprint.seedHistory;
+
+    const actual5 = client1._http2antifingerprint.seedHistory;
+    const actual6 = client2._http2antifingerprint.seedHistory;
+
+    assert.deepEqual(actual3, expected2);
+    assert.deepEqual(actual4, expected2);
+    assert.notDeepStrictEqual(actual5, actual6);
   });
 });
 

@@ -96,15 +96,25 @@ async function connect(authority, listener, options) {
       ...(options?.spoofHonorCipherOrder && getSpoofHonorCipherOrderProps()),
     };
 
+    const seedHistory = typeof options?.seed === "number" ? [] : null;
+
     const sessionOptions = {
       ...new AntiFingerprintClientSessionOptions().get(
-        this._http2antifingerprintSessionOptions
+        this._http2antifingerprintSessionOptions,
+        typeof options?.seed === "number" ? [options.seed] : null,
+        seedHistory
       ),
       ...(options?.ca && { ca: options.ca }),
       ...options,
     };
 
     client = http2.connect(authority, sessionOptions, listener);
+
+    if (seedHistory) {
+      client._http2antifingerprint = {
+        seedHistory,
+      };
+    }
   }
 
   client._http2antifingerprintOptions = this._http2antifingerprintOptions;
