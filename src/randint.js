@@ -12,11 +12,9 @@ const seedint = (min, max, seedRef) => {
     next++;
   }
 
-  seedRef[0] = seedRef[0] + 1;
+  seedRef[0] = seedRef[0] + 0.1;
 
-  return Math.abs(
-    randint(min, max, () => Math.sin(next) * 10000 - Math.floor(next))
-  );
+  return randint(min, max, () => Math.abs(Math.sin(next)));
 };
 
 const shuffle = (array) => [...array].sort(() => (randint(0, 1) ? 1 : -1));
