@@ -746,12 +746,12 @@ describe("request", () => {
   it("should make seed generation idempotent", async () => {
     const expected1 = [
       {
-        headerTableSize: 0,
+        headerTableSize: 551400888,
         enablePush: true,
         initialWindowSize: 595786089,
         maxFrameSize: 23602621357,
-        maxConcurrentStreams: -496240228,
-        maxHeaderListSize: -628768293,
+        maxConcurrentStreams: 496240228,
+        maxHeaderListSize: 628768293,
         enableConnectProtocol: true,
       },
     ];
@@ -760,9 +760,9 @@ describe("request", () => {
         headerTableSize: 551400888,
         enablePush: true,
         initialWindowSize: 92287800,
-        maxFrameSize: -126913421755,
-        maxConcurrentStreams: -628768293,
-        maxHeaderListSize: -183510957,
+        maxFrameSize: 126913421755,
+        maxConcurrentStreams: 628768293,
+        maxHeaderListSize: 183510957,
         enableConnectProtocol: true,
       },
     ];
