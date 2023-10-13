@@ -94,7 +94,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api");
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     try {
       assert.doesNotThrow(actual);
@@ -113,7 +114,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api");
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     try {
       assert.throws(actual);
@@ -134,7 +136,12 @@ describe("request", () => {
       options
     );
 
-    const actual = () => client.request("/api", http2options, options);
+    const actual = () =>
+      client.request(
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
+        http2options,
+        options
+      );
 
     try {
       assert.doesNotThrow(actual);
@@ -155,7 +162,12 @@ describe("request", () => {
       options
     );
 
-    const actual = () => client.request("/api", http2options, options);
+    const actual = () =>
+      client.request(
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
+        http2options,
+        options
+      );
 
     try {
       assert.doesNotThrow(actual);
@@ -176,7 +188,7 @@ describe("request", () => {
     );
 
     const actual = () =>
-      client.request("/api", http2options, {
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, http2options, {
         preferChromeHeaderOrder: true,
       });
 
@@ -195,7 +207,7 @@ describe("request", () => {
     );
 
     const actual = () =>
-      client.request("/api", http2options, {
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, http2options, {
         preferChromeHeaderOrder: true,
       });
 
@@ -219,7 +231,12 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api", http2options, options);
+    const actual = () =>
+      client.request(
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
+        http2options,
+        options
+      );
 
     try {
       assert.throws(actual);
@@ -251,7 +268,7 @@ describe("request", () => {
           _tlsOptions: { ALPNProtocols: actual },
         },
       },
-    } = await client.request("/api");
+    } = await client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     assert.deepStrictEqual(Array.from(actual), expected);
   });
@@ -304,7 +321,11 @@ describe("request", () => {
       },
     } = client;
     const actualFunctionCall = () =>
-      client.request("/api", http2options, options);
+      client.request(
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
+        http2options,
+        options
+      );
 
     try {
       assert.doesNotThrow(actualFunctionCall);
@@ -363,10 +384,10 @@ describe("request", () => {
 
   it("should send headers with shuffled order and with static pseudo-header order", async () => {
     const expectedPseudoHeaderOrder = [
-      ":method",
-      ":authority",
-      ":scheme",
-      ":path",
+      constants.HTTP2_HEADER_METHOD,
+      constants.HTTP2_HEADER_AUTHORITY,
+      constants.HTTP2_HEADER_SCHEME,
+      constants.HTTP2_HEADER_PATH,
     ];
     const notExpectedHeaderOrder = [
       "user-agent",
@@ -378,10 +399,10 @@ describe("request", () => {
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
         {
-          ":method": "GET",
-          ":authority": "example.com",
-          ":scheme": "https",
-          ":path": "/api",
+          [constants.HTTP2_HEADER_METHOD]: "GET",
+          [constants.HTTP2_HEADER_AUTHORITY]: "example.com",
+          [constants.HTTP2_HEADER_SCHEME]: "https",
+          [constants.HTTP2_HEADER_PATH]: "/api",
           "user-agent": "node",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "en-US",
@@ -411,10 +432,10 @@ describe("request", () => {
 
   it("should send headers with shuffled pseudo-header order and with static header order", async () => {
     const notExpectedPseudoHeaderOrder = [
-      ":method",
-      ":authority",
-      ":scheme",
-      ":path",
+      constants.HTTP2_HEADER_METHOD,
+      constants.HTTP2_HEADER_AUTHORITY,
+      constants.HTTP2_HEADER_SCHEME,
+      constants.HTTP2_HEADER_PATH,
     ];
     const expectedHeaderOrder = [
       "user-agent",
@@ -426,10 +447,10 @@ describe("request", () => {
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
         {
-          ":method": "GET",
-          ":authority": "example.com",
-          ":scheme": "https",
-          ":path": "/api",
+          [constants.HTTP2_HEADER_METHOD]: "GET",
+          [constants.HTTP2_HEADER_AUTHORITY]: "example.com",
+          [constants.HTTP2_HEADER_SCHEME]: "https",
+          [constants.HTTP2_HEADER_PATH]: "/api",
           "user-agent": "node",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "en-US",
@@ -456,10 +477,10 @@ describe("request", () => {
 
   it("should send headers with shuffled pseudo-header order and with shuffled header order", async () => {
     const notExpectedHeaderOrder = [
-      ":method",
-      ":authority",
-      ":scheme",
-      ":path",
+      constants.HTTP2_HEADER_METHOD,
+      constants.HTTP2_HEADER_AUTHORITY,
+      constants.HTTP2_HEADER_SCHEME,
+      constants.HTTP2_HEADER_PATH,
       "user-agent",
       "accept-encoding",
       "accept-language",
@@ -469,10 +490,10 @@ describe("request", () => {
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
         {
-          ":method": "GET",
-          ":authority": "example.com",
-          ":scheme": "https",
-          ":path": "/api",
+          [constants.HTTP2_HEADER_METHOD]: "GET",
+          [constants.HTTP2_HEADER_AUTHORITY]: "example.com",
+          [constants.HTTP2_HEADER_SCHEME]: "https",
+          [constants.HTTP2_HEADER_PATH]: "/api",
           "user-agent": "node",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "en-US",
@@ -495,10 +516,10 @@ describe("request", () => {
 
   it("should send static pseudo- and original headers", async () => {
     const expected = [
-      ":method",
-      ":authority",
-      ":scheme",
-      ":path",
+      constants.HTTP2_HEADER_METHOD,
+      constants.HTTP2_HEADER_AUTHORITY,
+      constants.HTTP2_HEADER_SCHEME,
+      constants.HTTP2_HEADER_PATH,
       "user-agent",
       "accept-encoding",
       "accept-language",
@@ -508,10 +529,10 @@ describe("request", () => {
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
         {
-          ":method": "GET",
-          ":authority": "example.com",
-          ":scheme": "https",
-          ":path": "/api",
+          [constants.HTTP2_HEADER_METHOD]: "GET",
+          [constants.HTTP2_HEADER_AUTHORITY]: "example.com",
+          [constants.HTTP2_HEADER_SCHEME]: "https",
+          [constants.HTTP2_HEADER_PATH]: "/api",
           "user-agent": "node",
           "accept-encoding": "gzip, deflate, br",
           "accept-language": "en-US",
@@ -548,7 +569,11 @@ describe("request", () => {
       _http2antifingerprintSessionOptions: { spoofHonorCipherOrder: actual },
     } = client;
     const actualFunctionCall = () =>
-      client.request("/api", http2options, options);
+      client.request(
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
+        http2options,
+        options
+      );
 
     try {
       assert.doesNotThrow(actualFunctionCall);
@@ -569,7 +594,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api", {}, {});
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
 
     try {
       assert.doesNotThrow(actual);
@@ -601,7 +627,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api", {}, {});
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
 
     try {
       assert.doesNotThrow(actual);
@@ -633,7 +660,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api", {}, {});
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
 
     try {
       assert.throws(actual);
@@ -658,7 +686,8 @@ describe("request", () => {
       }
     );
 
-    const actual = () => client.request("/api", {}, {});
+    const actual = () =>
+      client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
 
     try {
       assert.doesNotThrow(actual);
@@ -690,7 +719,7 @@ describe("request", () => {
 
     const actual = () =>
       client.request(
-        "/api",
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
         {},
         {
           preferChromeHeaderOrder: true,
@@ -721,7 +750,7 @@ describe("request", () => {
 
     const actual = () =>
       client.request(
-        "/api",
+        { [constants.HTTP2_HEADER_PATH]: "/api" },
         {},
         {
           preferChromeHeaderOrder: true,
@@ -746,24 +775,24 @@ describe("request", () => {
   it("should make seed generation idempotent", async () => {
     const expected1 = [
       {
-        headerTableSize: 0,
-        enablePush: true,
-        initialWindowSize: 595786089,
-        maxFrameSize: 23602621357,
-        maxConcurrentStreams: -496240228,
-        maxHeaderListSize: -628768293,
+        headerTableSize: 55146,
+        enablePush: false,
+        initialWindowSize: 13019,
+        maxFrameSize: 4969548,
+        maxConcurrentStreams: 25520,
+        maxHeaderListSize: 31419,
         enableConnectProtocol: true,
       },
     ];
     const expected2 = [
       {
-        headerTableSize: 551400888,
-        enablePush: true,
-        initialWindowSize: 92287800,
-        maxFrameSize: -126913421755,
-        maxConcurrentStreams: -628768293,
-        maxHeaderListSize: -183510957,
         enableConnectProtocol: true,
+        enablePush: true,
+        headerTableSize: 55146,
+        initialWindowSize: 61082,
+        maxConcurrentStreams: 64582,
+        maxFrameSize: 16166420,
+        maxHeaderListSize: 65371,
       },
     ];
     const client1 = await http2antifingerprint.connect(
@@ -774,15 +803,15 @@ describe("request", () => {
       }
     );
 
-    client1.request("/");
-    client1.request("/");
-    client1.request("/");
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     let actual1 = client1._http2antifingerprint.seedHistory;
 
-    client1.request("/");
-    client1.request("/");
-    client1.request("/");
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     let actual2 = client1._http2antifingerprint.seedHistory;
 
@@ -797,15 +826,15 @@ describe("request", () => {
       }
     );
 
-    client2.request("/");
-    client2.request("/");
-    client2.request("/");
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     let actual3 = client2._http2antifingerprint.seedHistory;
 
-    client2.request("/");
-    client2.request("/");
-    client2.request("/");
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     let actual4 = client2._http2antifingerprint.seedHistory;
 
@@ -815,6 +844,63 @@ describe("request", () => {
     assert.deepEqual(actual3, expected2);
     assert.deepEqual(actual4, expected2);
     assert.notDeepStrictEqual(actual5, actual6);
+  });
+
+  it("should randomize request frames on isRequestDependsOnSeed", async () => {
+    const expected = [
+      {
+        enableConnectProtocol: true,
+        enablePush: false,
+        headerTableSize: 55146,
+        initialWindowSize: 13019,
+        maxConcurrentStreams: 25520,
+        maxFrameSize: 4969548,
+        maxHeaderListSize: 31419,
+      },
+      {
+        enableConnectProtocol: true,
+        enablePush: false,
+        headerTableSize: 55146,
+        initialWindowSize: 13019,
+        maxConcurrentStreams: 25520,
+        maxFrameSize: 4958007,
+        maxHeaderListSize: 31419,
+      },
+      {
+        enableConnectProtocol: true,
+        enablePush: true,
+        headerTableSize: 42219,
+        initialWindowSize: 51336,
+        maxConcurrentStreams: 58406,
+        maxFrameSize: 14117540,
+        maxHeaderListSize: 61082,
+      },
+      {
+        enableConnectProtocol: true,
+        enablePush: true,
+        headerTableSize: 64582,
+        initialWindowSize: 65508,
+        maxConcurrentStreams: 63822,
+        maxFrameSize: 16637374,
+        maxHeaderListSize: 62016,
+      },
+    ];
+    const client = await http2antifingerprint.connect(
+      "https://example.com",
+      listener,
+      {
+        seed: 0,
+        isRequestDependsOnSeed: true,
+      }
+    );
+
+    client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+
+    let actual = client._http2antifingerprint.seedHistory;
+
+    assert.deepEqual(actual, expected);
   });
 });
 

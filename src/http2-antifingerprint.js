@@ -6,7 +6,7 @@ const http2 = require("node:http2");
 const { getCurves, constants } = require("node:crypto");
 
 const { shuffle } = require("./shuffle");
-const { randint } = require("./randint");
+const { randint, seedint } = require("./randint");
 const { bitmask } = require("./bitmask");
 const config = require("./options/const");
 const {
@@ -124,6 +124,8 @@ async function connect(authority, listener, options) {
 
   const { request: originalRequest } = client;
 
+  const seedRef = [options?.seed];
+
   client.request = (headers, options, antifingerprintOptions) => {
     let reorderHeaders = true;
     let reorderPseudoHeaders = true;
@@ -153,7 +155,28 @@ async function connect(authority, listener, options) {
       reorderPseudoHeaders: optionsReorderPseudoHeaders,
       banOriginalHeaderOrder: optionsBanOriginalHeaderOrder,
       banOriginalPseudoHeaderOrder: optionsBanOriginalPseudoHeaderOrder,
+      isRequestDependsOnSeed: optionsIsRequestDependsOnSeed,
     } = mergedOptions;
+
+    if (optionsIsRequestDependsOnSeed !== undefined) {
+      const settings = {
+        headerTableSize: seedint(0, 2 ** 16 - 1, seedRef),
+        enablePush: !!seedint(0, 1, seedRef),
+        initialWindowSize: seedint(0, 2 ** 16 - 1, seedRef),
+        maxFrameSize: seedint(1, 2 ** 24 - 1, seedRef),
+        maxConcurrentStreams: seedint(0, 2 ** 16 - 1, seedRef),
+        maxHeaderListSize: seedint(0, 2 ** 16 - 1, seedRef),
+        enableConnectProtocol: !!seedint(0, 1, seedRef),
+      };
+
+      client._http2antifingerprint.seedHistory.push(settings);
+
+      client.settings(settings);
+
+      client.on("localSettings", (settings) => {
+        debugger;
+      });
+    }
 
     if (optionsReorderHeaders !== undefined) {
       reorderHeaders = optionsReorderHeaders;
