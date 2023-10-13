@@ -6,11 +6,15 @@ const randint = (min, max, callback = Math.random) => {
 
 // https://stackoverflow.com/a/19303725
 const seedint = (min, max, seedRef) => {
-  const next = seedRef[0];
+  let next = seedRef[0];
 
-  seedRef[0] = seedRef[0] + 1;
+  if (!next) {
+    next++;
+  }
 
-  return randint(min, max, () => Math.sin(next) * 10000 - Math.floor(next));
+  seedRef[0] = seedRef[0] + 0.1;
+
+  return randint(min, max, () => Math.abs(Math.sin(next)));
 };
 
 const shuffle = (array) => [...array].sort(() => (randint(0, 1) ? 1 : -1));

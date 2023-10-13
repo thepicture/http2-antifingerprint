@@ -1,12 +1,19 @@
 "use strict";
 
+import { constants } from "node:http2";
+
 module.exports = {
   order: {
     chrome: {
       post: {
         header: {
           order: {
-            pseudo: [":method", ":authority", ":scheme", ":path"],
+            pseudo: [
+              constants.HTTP2_HEADER_METHOD,
+              constants.HTTP2_HEADER_AUTHORITY,
+              constants.HTTP2_HEADER_SCHEME,
+              constants.HTTP2_HEADER_PATH,
+            ],
             http: [
               "content-length",
               "pragma",
@@ -31,7 +38,12 @@ module.exports = {
       get: {
         header: {
           order: {
-            pseudo: [":method", ":authority", ":scheme", ":path"],
+            pseudo: [
+              constants.HTTP2_HEADER_METHOD,
+              constants.HTTP2_HEADER_AUTHORITY,
+              constants.HTTP2_HEADER_SCHEME,
+              constants.HTTP2_HEADER_PATH,
+            ],
             http: [
               "pragma",
               "cache-control",

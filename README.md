@@ -106,6 +106,8 @@ const client = await http2antifingerprint.connect(
 
 `seed` - allows to set up http2 window values depending on numeric value. History acquired using `_http2antifingerprint.seedHistory`
 
+`isRequestDependsOnSeed` - should `_http2antifingerprint.seedHistory` generate entry and update http2 window settings on every new request from the same session. Defaults to `false`
+
 ### Creating a request
 
 `const request = client.request([headers], [client session options], [header options]);`
