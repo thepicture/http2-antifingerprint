@@ -172,10 +172,6 @@ async function connect(authority, listener, options) {
       client._http2antifingerprint.seedHistory.push(settings);
 
       client.settings(settings);
-
-      client.on("localSettings", (settings) => {
-        debugger;
-      });
     }
 
     if (optionsReorderHeaders !== undefined) {
