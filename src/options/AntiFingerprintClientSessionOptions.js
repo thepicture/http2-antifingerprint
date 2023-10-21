@@ -5,6 +5,7 @@ const tls = require("node:tls");
 const { randint, seedint } = require("../randint");
 
 const HTTPS_PORT = 443;
+
 class AntiFingerprintClientSessionOptions {
   get = (options = {}, seedRef, seedHistory) => {
     const settings = Array.isArray(seedRef)
@@ -62,10 +63,22 @@ class AntiFingerprintClientSessionOptions {
 
         const { port } = url;
 
+        const tlsCiphers = ["TLSv1", "TLSv1.1", "TLSv1.2", , "TLSv1.3"];
+
+        const tlsMinVersionIndex = randint(0, tlsCiphers.length - 1);
+        const tlsMaxVersionIndex = randint(
+          tlsMinVersionIndex,
+          tlsCiphers.length - 1
+        );
+
         return tls.connect(port.length ? Number(port) : HTTPS_PORT, url.host, {
           servername: url.host,
           ALPNProtocols: ["h2"],
           ciphers: ciphers.join(":").toUpperCase(),
+          secureContext: tls.createSecureContext({
+            minVersion: tlsCiphers[tlsMinVersionIndex],
+            maxVersion: tlsCiphers[tlsMaxVersionIndex],
+          }),
           ...clonedOptions.tlsConnectOverrides,
         });
       },
