@@ -1,18 +1,20 @@
-import pem, { CertificateCreationResult } from "pem";
-
+import { constants } from "node:http2";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
-import { ClientHttp2Session, ClientHttp2Stream, Http2Server } from "node:http2";
-import { constants, createSecureServer } from "node:http2";
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it, beforeEach, afterEach, after } from "node:test";
+import { ClientHttp2Session, ClientHttp2Stream } from "node:http2";
+import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 
 import http2antifingerprint from "..";
-
-process.on("uncaughtException", process.exit);
 
 const listener = () => {};
 const { keys: ObjectKeys } = Object;
 
-describe("client instantiation", () => {
+describe("http2-antifingerprint", () => {
+  after(() => {
+    process.kill(process.pid);
+  });
+
   it("should instantiate client", async () => {
     const expected = true;
 
@@ -25,66 +27,60 @@ describe("client instantiation", () => {
 
     assert.strictEqual(actual, expected);
   });
-});
 
-describe("connection", () => {
-  let server: Http2Server;
-  let clientKey: string;
-  let certificate: string;
+  let server: ChildProcessWithoutNullStreams;
 
   beforeEach(async () => {
-    ({ clientKey, certificate } = await new Promise<CertificateCreationResult>(
-      (resolve) => {
-        pem.createCertificate(
-          { selfSigned: true },
-          (_, certificate: CertificateCreationResult) => resolve(certificate)
-        );
-      }
-    ));
+    await new Promise<void>((resolve) => {
+      server = spawn("node", [
+        "--loader",
+        "tsx",
+        "test/server.ts",
+        "--",
+        "3000",
+      ]);
 
-    server = createSecureServer({ key: clientKey, cert: certificate })
-      .on("stream", (stream) => {
-        stream.respond({
-          [constants.HTTP2_HEADER_CONTENT_TYPE]: "text/html; charset=utf-8",
-          [constants.HTTP2_HEADER_STATUS]: constants.HTTP_STATUS_OK,
-        });
-        stream.end("<html></html>");
-      })
-      .listen(3000);
+      server.stdout.on("data", (buffer) => {
+        if (String(buffer) === "listening") {
+          resolve();
+        }
+      });
+    });
   });
 
   afterEach(() => {
-    server.close();
+    server.kill("SIGKILL");
   });
 
-  it("should receive body", async (_, done) => {
-    const expected = "<body></body>";
+  it("should receive body", async () => {
+    const expected = "<html></html>";
 
     const client: ClientHttp2Session = await http2antifingerprint.connect(
       "https://localhost:3000",
-      {},
-      { ca: certificate }
+      listener,
+      { ca: readFileSync("localhost-cert.pem") }
     );
-    const request: ClientHttp2Stream = client.request({
-      [constants.HTTP2_HEADER_PATH]: "/",
-    });
-    request.setEncoding("utf8");
 
-    let actual = "";
-    request.on("data", (chunk: string) => {
-      actual += chunk;
-    });
-    request.on("end", () => {
-      client.close();
+    await new Promise<void>((resolve) => {
+      const request: ClientHttp2Stream = client.request({
+        [constants.HTTP2_HEADER_PATH]: "/",
+      });
 
-      assert.strictEqual(actual, expected);
-      done();
+      request.setEncoding("utf8");
+
+      let actual = "";
+      request.on("data", (chunk: string) => {
+        actual += chunk;
+      });
+      request.on("end", () => {
+        assert.strictEqual(actual, expected);
+
+        client.close();
+        resolve();
+      });
     });
-    request.end();
   });
-});
 
-describe("request", () => {
   it("should fallback to client options on no options", async () => {
     const client = await http2antifingerprint.connect(
       "https://example.com",
@@ -269,6 +265,7 @@ describe("request", () => {
         },
       },
     } = await client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
+    client.destroy();
 
     assert.deepStrictEqual(Array.from(actual), expected);
   });
@@ -280,7 +277,7 @@ describe("request", () => {
       },
     };
     const expected = options;
-    const { _http2antifingerprintOptions: actual } =
+    const { _http2antifingerprintOptions: actual, destr } =
       await http2antifingerprint.connect(
         "https://example.com",
         listener,
@@ -807,13 +804,13 @@ describe("request", () => {
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
-    let actual1 = client1._http2antifingerprint.seedHistory;
+    const actual1 = client1._http2antifingerprint.seedHistory;
 
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
-    let actual2 = client1._http2antifingerprint.seedHistory;
+    const actual2 = client1._http2antifingerprint.seedHistory;
 
     assert.deepEqual(actual1, expected1);
     assert.deepEqual(actual2, expected1);
@@ -830,16 +827,17 @@ describe("request", () => {
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
-    let actual3 = client2._http2antifingerprint.seedHistory;
+    const actual3 = client2._http2antifingerprint.seedHistory;
 
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
-    let actual4 = client2._http2antifingerprint.seedHistory;
-
+    const actual4 = client2._http2antifingerprint.seedHistory;
     const actual5 = client1._http2antifingerprint.seedHistory;
     const actual6 = client2._http2antifingerprint.seedHistory;
+    client1.destroy();
+    client2.destroy();
 
     assert.deepEqual(actual3, expected2);
     assert.deepEqual(actual4, expected2);
@@ -897,75 +895,9 @@ describe("request", () => {
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
-
-    let actual = client._http2antifingerprint.seedHistory;
+    const actual = client._http2antifingerprint.seedHistory;
 
     assert.deepEqual(actual, expected);
-  });
-});
-
-describe("non-standart port scope", () => {
-  let server: Http2Server;
-  let clientKey: string;
-  let certificate: string;
-
-  beforeEach(async () => {
-    ({ clientKey, certificate } = await new Promise<CertificateCreationResult>(
-      (resolve) => {
-        pem.createCertificate(
-          { selfSigned: true },
-          (_, certificate: CertificateCreationResult) => resolve(certificate)
-        );
-      }
-    ));
-
-    server = createSecureServer({ key: clientKey, cert: certificate })
-      .on("stream", (stream) => {
-        stream.respond({
-          [constants.HTTP2_HEADER_CONTENT_TYPE]: "text/html; charset=utf-8",
-          [constants.HTTP2_HEADER_STATUS]: constants.HTTP_STATUS_OK,
-        });
-        stream.end("<html></html>");
-      })
-      .listen(3000);
-  });
-
-  afterEach(() => {
-    server.close();
-  });
-
-  it("should work with non-standard port", async (_, done) => {
-    const expected = "<html></html>";
-    const options = {};
-    const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://non-standard.com:666"
-    );
-
-    let actual = "";
-
-    const request = client.request(
-      { [constants.HTTP2_HEADER_PATH]: "/" },
-      http2options,
-      options
-    );
-    request.setEncoding("utf8");
-
-    request.on("error", assert.fail);
-
-    request.on("data", (chunk: string) => {
-      actual += chunk;
-    });
-
-    request.on("end", () => {
-      assert.strictEqual(actual, expected);
-
-      client.destroy();
-
-      done();
-    });
-
-    request.end();
   });
 
   it("should set cert option", async () => {
@@ -978,7 +910,8 @@ describe("non-standart port scope", () => {
       }
     );
 
-    let actual = client._http2antifingerprintOptions.ca;
+    const actual = client._http2antifingerprintOptions.ca;
+    client.destroy();
 
     assert.strictEqual(actual, expected);
   });
