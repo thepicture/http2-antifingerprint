@@ -7,7 +7,7 @@ const listener = () => {};
 
 describe(() => {
   after(() => {
-    setTimeout(() => process.kill(process.pid), 1000);
+    setTimeout(() => process.kill(process.pid, "SIGINT"), 1000);
   });
 
   it("should instantiate client", async () => {
