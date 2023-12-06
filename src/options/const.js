@@ -1,6 +1,6 @@
 "use strict";
 
-import { constants } from "node:http2";
+const { constants } = require("node:http2");
 
 module.exports = {
   order: {
