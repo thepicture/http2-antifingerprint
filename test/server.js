@@ -1,8 +1,7 @@
-import { Http2Server } from "node:http2";
-import { constants, createSecureServer } from "node:http2";
-import { readFileSync } from "node:fs";
+const { readFileSync } = require("node:fs");
+const { constants, createSecureServer } = require("node:http2");
 
-let server: Http2Server;
+let server;
 
 (async () => {
   server = createSecureServer({

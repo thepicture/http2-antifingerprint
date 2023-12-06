@@ -1,11 +1,9 @@
-import { constants } from "node:http2";
-import { readFileSync } from "node:fs";
-import assert from "node:assert/strict";
-import { describe, it, beforeEach, afterEach, after } from "node:test";
-import { ClientHttp2Session, ClientHttp2Stream } from "node:http2";
-import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-
-import http2antifingerprint from "..";
+const { constants } = require("node:http2");
+const { readFileSync } = require("node:fs");
+const assert = require("node:assert/strict");
+const { spawn } = require("node:child_process");
+const { describe, it, beforeEach, afterEach, after } = require("node:test");
+const http2antifingerprint = require("..");
 
 const listener = () => {};
 const { keys: ObjectKeys } = Object;
@@ -28,17 +26,11 @@ describe("http2-antifingerprint", () => {
     assert.strictEqual(actual, expected);
   });
 
-  let server: ChildProcessWithoutNullStreams;
+  let server;
 
   beforeEach(async () => {
-    await new Promise<void>((resolve) => {
-      server = spawn("node", [
-        "--loader",
-        "tsx",
-        "test/server.ts",
-        "--",
-        "3000",
-      ]);
+    await new Promise((resolve) => {
+      server = spawn("node", ["test/server.js", "--", "3000"]);
 
       server.stdout.on("data", (buffer) => {
         if (String(buffer) === "listening") {
@@ -55,21 +47,21 @@ describe("http2-antifingerprint", () => {
   it("should receive body", async () => {
     const expected = "<html></html>";
 
-    const client: ClientHttp2Session = await http2antifingerprint.connect(
+    const client = await http2antifingerprint.connect(
       "https://localhost:3000",
       listener,
       { ca: readFileSync("localhost-cert.pem") }
     );
 
-    await new Promise<void>((resolve) => {
-      const request: ClientHttp2Stream = client.request({
+    await new Promise((resolve) => {
+      const request = client.request({
         [constants.HTTP2_HEADER_PATH]: "/",
       });
 
       request.setEncoding("utf8");
 
       let actual = "";
-      request.on("data", (chunk: string) => {
+      request.on("data", (chunk) => {
         actual += chunk;
       });
       request.on("end", () => {
