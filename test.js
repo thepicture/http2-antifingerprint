@@ -1,72 +1,77 @@
 const { constants } = require("node:http2");
+const { readFileSync } = require("node:fs");
 const assert = require("node:assert/strict");
-const { it, after, describe } = require("node:test");
+const { it, describe, before, after } = require("node:test");
+const { spawn, ChildProcess } = require("node:child_process");
 const http2antifingerprint = require(".");
 
-const listener = () => {};
+const PORT = 3000;
+const NOOP = new Function();
+const MOCK_URL = `https://localhost:${PORT}`;
+const ca = readFileSync("localhost-cert.pem");
+
+/**
+ * @type {ChildProcess}
+ */
+let worker;
 
 describe(() => {
-  after(() => {
-    setTimeout(() => process.kill(process.pid), 1000);
+  before(async () => {
+    await new Promise((resolve) => {
+      worker = spawn("node", ["./server.js"]);
+      worker.stdout.on("data", resolve);
+    });
+  });
+
+  after(async () => {
+    await new Promise((r) => setTimeout(r, 1000));
+    worker.kill();
   });
 
   it("should instantiate client", async () => {
     const expected = true;
 
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      ca,
+    });
     const actual = "alpnProtocol" in client;
-    client.destroy();
 
     assert.strictEqual(actual, expected);
   });
 
   it("should fallback to client options on no options", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        preferChromeHeaderOrder: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      preferChromeHeaderOrder: true,
+      ca: readFileSync("localhost-cert.pem"),
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     assert.doesNotThrow(actual);
-    client.destroy();
   });
 
   it("should throw error in request with strict mode without options", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        preferChromeHeaderOrder: true,
-        strictMode: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      preferChromeHeaderOrder: true,
+      strictMode: true,
+      ca,
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should not throw error in request with strict mode with options", async () => {
     const options = {
       preferChromeHeaderOrder: true,
       strictMode: true,
+      ca,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const actual = () =>
       client.request(
@@ -76,20 +81,16 @@ describe(() => {
       );
 
     assert.doesNotThrow(actual);
-    client.destroy();
   });
 
   it("should not throw error in request without strict mode with options", async () => {
     const options = {
       preferChromeHeaderOrder: true,
       strictMode: true,
+      ca,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const actual = () =>
       client.request(
@@ -99,19 +100,15 @@ describe(() => {
       );
 
     assert.doesNotThrow(actual);
-    client.destroy();
   });
 
   it("should throw after impossible merged options from connect and request contexts", async () => {
     const options = {
       reorderHeaders: true,
+      ca,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, http2options, {
@@ -119,23 +116,19 @@ describe(() => {
       });
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should throw after impossible merged options from undefined connect and request contexts", async () => {
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP);
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, http2options, {
         preferChromeHeaderOrder: true,
+        ca,
       });
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should throw after impossible merged options from connect and undefined request contexts", async () => {
@@ -143,13 +136,10 @@ describe(() => {
       reorderHeaders: true,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        preferChromeHeaderOrder: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      preferChromeHeaderOrder: true,
+      ca,
+    });
 
     const actual = () =>
       client.request(
@@ -159,7 +149,6 @@ describe(() => {
       );
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should override tls connect options", async () => {
@@ -168,12 +157,9 @@ describe(() => {
       tlsConnectOverrides: {
         ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
       },
+      ca,
     };
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const {
       session: {
@@ -182,7 +168,6 @@ describe(() => {
         },
       },
     } = await client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
-    client.destroy();
 
     assert.deepStrictEqual(Array.from(actual), expected);
   });
@@ -192,29 +177,20 @@ describe(() => {
       tlsConnectOverrides: {
         ALPNProtocols: ["h2", "http/1.1", "spdy/3.1"],
       },
+      ca,
     };
     const expected = options;
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
     const { _http2antifingerprintOptions: actual } = client;
-    client.destroy();
 
     assert.deepStrictEqual(actual, expected);
   });
 
   it("should access listener applied", async () => {
-    const expected = listener;
-    const options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const expected = NOOP;
+    const options = { ca };
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
     const { _http2antifingerprintListener: actual } = client;
-    client.destroy();
 
     assert.deepStrictEqual(actual, expected);
   });
@@ -223,13 +199,10 @@ describe(() => {
     const expected = true;
     const options = {
       negotiationSpoof: true,
+      ca,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const {
       _http2antifingerprintSessionOptions: {
@@ -245,39 +218,31 @@ describe(() => {
 
     assert.doesNotThrow(actualFunctionCall);
     assert.strictEqual(actualNegotiationSpoof, expected);
-    client.destroy();
   });
 
   it("should work with negotiation spoof", async () => {
     const expected = true;
     const options = {
       curveSpoof: true,
+      ca,
     };
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const {
       _http2antifingerprintSessionOptions: { curveSpoof: actualCurveSpoof },
     } = client;
 
     assert.strictEqual(actualCurveSpoof, expected);
-    client.destroy();
   });
 
   it("should allow to spoof secure options", async () => {
     const expected = true;
     const options = {
       spoofSecureOptions: true,
+      ca,
     };
 
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const {
       _http2antifingerprintSessionOptions: {
@@ -286,7 +251,6 @@ describe(() => {
     } = client;
 
     assert.strictEqual(actualSpoofSecureOptions, expected);
-    client.destroy();
   });
 
   it("should send headers with shuffled order and with static pseudo-header order", async () => {
@@ -301,7 +265,7 @@ describe(() => {
       "accept-encoding",
       "accept-language",
     ];
-    const client = await http2antifingerprint.connect("https://example.com");
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, { ca });
 
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
@@ -330,8 +294,6 @@ describe(() => {
         notExpectedHeaderOrder
       );
     }
-
-    client.destroy();
   });
 
   it("should send headers with shuffled pseudo-header order and with static header order", async () => {
@@ -346,7 +308,7 @@ describe(() => {
       "accept-encoding",
       "accept-language",
     ];
-    const client = await http2antifingerprint.connect("https://example.com");
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, { ca });
 
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
@@ -372,8 +334,6 @@ describe(() => {
       );
       assert.deepStrictEqual(Object.keys(actual).slice(4), expectedHeaderOrder);
     }
-
-    client.destroy();
   });
 
   it("should send headers with shuffled pseudo-header order and with shuffled header order", async () => {
@@ -386,7 +346,7 @@ describe(() => {
       "accept-encoding",
       "accept-language",
     ];
-    const client = await http2antifingerprint.connect("https://example.com");
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, { ca });
 
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
@@ -408,8 +368,6 @@ describe(() => {
 
       assert.notDeepStrictEqual(Object.keys(actual), notExpectedHeaderOrder);
     }
-
-    client.destroy();
   });
 
   it("should send static pseudo- and original headers", async () => {
@@ -422,7 +380,7 @@ describe(() => {
       "accept-encoding",
       "accept-language",
     ];
-    const client = await http2antifingerprint.connect("https://example.com");
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, { ca });
 
     for (let i = 0; i < 1024; i++) {
       const { sentHeaders: actual } = await client.request(
@@ -444,21 +402,16 @@ describe(() => {
 
       assert.deepStrictEqual(Object.keys(actual), expected);
     }
-
-    client.destroy();
   });
 
   it("should spoof cipher preferences", async () => {
     const expected = true;
     const options = {
       spoofHonorCipherOrder: true,
+      ca,
     };
     const http2options = {};
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      options
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
 
     const {
       _http2antifingerprintSessionOptions: { spoofHonorCipherOrder: actual },
@@ -472,19 +425,15 @@ describe(() => {
 
     assert.doesNotThrow(actualFunctionCall);
     assert.strictEqual(actual, expected);
-    client.destroy();
   });
 
   it("should work with unauthenticated proxy", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        port: 80,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      port: 80,
+      ca,
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
@@ -497,21 +446,17 @@ describe(() => {
     assert.strictEqual(client._http2antifingerprintOptions.password, undefined);
     assert.ok(client._http2antifingerprintListener);
     assert.ok(client._http2antifingerprintSessionOptions);
-    client.destroy();
   });
 
   it("should work with authenticated proxy", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        user: "",
-        password: "",
-        port: 80,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      user: "",
+      password: "",
+      port: 80,
+      ca,
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
@@ -524,47 +469,39 @@ describe(() => {
     assert.strictEqual(client._http2antifingerprintOptions.password, "");
     assert.ok(client._http2antifingerprintListener);
     assert.ok(client._http2antifingerprintSessionOptions);
-    client.destroy();
   });
 
   it("should throw with authenticated proxy and contradiction options", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        user: "",
-        password: "",
-        port: 80,
-        strictMode: true,
-        preferChromeHeaderOrder: true,
-        reorderHeaders: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      user: "",
+      password: "",
+      port: 80,
+      strictMode: true,
+      preferChromeHeaderOrder: true,
+      reorderHeaders: true,
+      ca,
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should work with authenticated proxy and semantically correct options", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        user: "",
-        password: "",
-        port: 80,
-        strictMode: true,
-        preferChromeHeaderOrder: true,
-        reorderHeaders: false,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      user: "",
+      password: "",
+      port: 80,
+      strictMode: true,
+      preferChromeHeaderOrder: true,
+      reorderHeaders: false,
+      ca,
+    });
 
     const actual = () =>
       client.request({ [constants.HTTP2_HEADER_PATH]: "/api" }, {}, {});
@@ -577,22 +514,18 @@ describe(() => {
     assert.strictEqual(client._http2antifingerprintOptions.password, "");
     assert.ok(client._http2antifingerprintListener);
     assert.ok(client._http2antifingerprintSessionOptions);
-    client.destroy();
   });
 
   it("should throw with authenticated proxy and contradiction options in request", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        user: "",
-        password: "",
-        port: 80,
-        strictMode: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      user: "",
+      password: "",
+      port: 80,
+      strictMode: true,
+      ca,
+    });
 
     const actual = () =>
       client.request(
@@ -605,22 +538,18 @@ describe(() => {
       );
 
     assert.throws(actual);
-    client.destroy();
   });
 
   it("should work with authenticated proxy and semantically correct options", async () => {
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        scheme: "http",
-        host: "proxy.com",
-        user: "",
-        password: "",
-        port: 80,
-        strictMode: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      scheme: "http",
+      host: "proxy.com",
+      user: "",
+      password: "",
+      port: 80,
+      strictMode: true,
+      ca,
+    });
 
     const actual = () =>
       client.request(
@@ -640,8 +569,6 @@ describe(() => {
     assert.strictEqual(client._http2antifingerprintOptions.password, "");
     assert.ok(client._http2antifingerprintListener);
     assert.ok(client._http2antifingerprintSessionOptions);
-
-    client.destroy();
   });
 
   it("should make seed generation idempotent", async () => {
@@ -667,13 +594,10 @@ describe(() => {
         maxHeaderListSize: 65371,
       },
     ];
-    const client1 = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        seed: 0,
-      }
-    );
+    const client1 = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      seed: 0,
+      ca,
+    });
 
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client1.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
@@ -690,13 +614,10 @@ describe(() => {
     assert.deepEqual(actual1, expected1);
     assert.deepEqual(actual2, expected1);
 
-    const client2 = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        seed: 1,
-      }
-    );
+    const client2 = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      seed: 1,
+      ca,
+    });
 
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client2.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
@@ -711,8 +632,6 @@ describe(() => {
     const actual4 = client2._http2antifingerprint.seedHistory;
     const actual5 = client1._http2antifingerprint.seedHistory;
     const actual6 = client2._http2antifingerprint.seedHistory;
-    client1.destroy();
-    client2.destroy();
 
     assert.deepEqual(actual3, expected2);
     assert.deepEqual(actual4, expected2);
@@ -758,36 +677,27 @@ describe(() => {
         maxHeaderListSize: 62016,
       },
     ];
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        seed: 0,
-        isRequestDependsOnSeed: true,
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      seed: 0,
+      isRequestDependsOnSeed: true,
+      ca,
+    });
 
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     client.request({ [constants.HTTP2_HEADER_PATH]: "/api" });
     const actual = client._http2antifingerprint.seedHistory;
-    client.destroy();
 
     assert.deepEqual(actual, expected);
   });
 
   it("should set cert option", async () => {
     const expected = "stub";
-    const client = await http2antifingerprint.connect(
-      "https://example.com",
-      listener,
-      {
-        ca: "stub",
-      }
-    );
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, {
+      ca: "stub",
+    });
 
     const actual = client._http2antifingerprintOptions.ca;
-    client.destroy();
 
     assert.strictEqual(actual, expected);
   });
