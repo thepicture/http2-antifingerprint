@@ -177,7 +177,7 @@ async function connect(authority, listener, options) {
         enableConnectProtocol: !!seedint(0, 1, seedRef),
       };
 
-      client._http2antifingerprint?.seedHistory.push(settings);
+      client._http2antifingerprint.seedHistory.push(settings);
 
       client.settings(settings);
     }
