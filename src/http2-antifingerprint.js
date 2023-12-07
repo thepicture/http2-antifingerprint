@@ -108,14 +108,6 @@ async function connect(authority, listener, options) {
       ...options,
     };
 
-    const isTestEnvironment =
-      process.env.NODE_ENV === "test" &&
-      authority.includes("https://localhost:3000");
-
-    if (isTestEnvironment) {
-      delete sessionOptions.createConnection;
-    }
-
     client = http2.connect(authority, sessionOptions, listener);
 
     if (seedHistory) {
@@ -177,7 +169,7 @@ async function connect(authority, listener, options) {
         enableConnectProtocol: !!seedint(0, 1, seedRef),
       };
 
-      client._http2antifingerprint?.seedHistory.push(settings);
+      client._http2antifingerprint.seedHistory.push(settings);
 
       client.settings(settings);
     }
