@@ -108,14 +108,6 @@ async function connect(authority, listener, options) {
       ...options,
     };
 
-    const isTestEnvironment =
-      process.env.NODE_ENV === "test" &&
-      authority.includes("https://localhost:3000");
-
-    if (isTestEnvironment) {
-      delete sessionOptions.createConnection;
-    }
-
     client = http2.connect(authority, sessionOptions, listener);
 
     if (seedHistory) {
