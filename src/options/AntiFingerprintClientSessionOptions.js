@@ -70,11 +70,6 @@ class AntiFingerprintClientSessionOptions {
           tlsCiphers.length - 1
         );
 
-        console.log(
-          tlsCiphers[tlsMinVersionIndex],
-          tlsCiphers[tlsMaxVersionIndex]
-        );
-
         return tls.connect(
           port.length ? Number(port) : HTTPS_PORT,
           url.hostname,
