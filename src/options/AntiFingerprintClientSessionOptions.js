@@ -62,13 +62,18 @@ class AntiFingerprintClientSessionOptions {
 
         const { port } = url;
 
-        const tlsCiphers = ["TLSv1.2", "TLSv1.3"];
+        const tlsCipherPairs = [
+          ["TLSv1", "TLSv1.2"],
+          ["TLSv1", "TLSv1.3"],
+          ["TLSv1.1", "TLSv1.2"],
+          ["TLSv1.1", "TLSv1.3"],
+          ["TLSv1.2", "TLSv1.2"],
+          ["TLSv1.2", "TLSv1.3"],
+          ["TLSv1.3", "TLSv1.3"],
+        ];
 
-        const tlsMinVersionIndex = randint(0, tlsCiphers.length - 1);
-        const tlsMaxVersionIndex = randint(
-          tlsMinVersionIndex,
-          tlsCiphers.length - 1
-        );
+        const [minTlsVersion, maxTlsVersion] =
+          tlsCipherPairs[randint(0, tlsCipherPairs.length - 1)];
 
         return tls.connect(
           port.length ? Number(port) : HTTPS_PORT,
@@ -80,8 +85,8 @@ class AntiFingerprintClientSessionOptions {
             requestCert: true,
             rejectUnauthorized: false,
             secureContext: tls.createSecureContext({
-              minVersion: tlsCiphers[tlsMinVersionIndex],
-              maxVersion: tlsCiphers[tlsMaxVersionIndex],
+              minVersion: minTlsVersion,
+              maxVersion: maxTlsVersion,
             }),
             ...clonedOptions.tlsConnectOverrides,
           }
