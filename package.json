@@ -1,6 +1,6 @@
 {
   "name": "http2-antifingerprint",
-  "version": "1.12.0",
+  "version": "1.12.1",
   "description": "Prevents identifying http2 requests",
   "main": "index.js",
   "scripts": {
