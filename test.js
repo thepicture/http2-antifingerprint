@@ -701,4 +701,19 @@ describe(() => {
 
     assert.strictEqual(actual, expected);
   });
+
+  it("should allow to use legacy tls", async () => {
+    const expected = true;
+    const options = {
+      legacyTlsSpoof: true,
+      ca,
+    };
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
+
+    const {
+      _http2antifingerprintOptions: { legacyTlsSpoof: actual },
+    } = client;
+
+    assert.deepStrictEqual(actual, expected);
+  });
 });

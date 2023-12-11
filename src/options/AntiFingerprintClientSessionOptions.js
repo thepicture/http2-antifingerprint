@@ -72,6 +72,15 @@ class AntiFingerprintClientSessionOptions {
           ["TLSv1.3", "TLSv1.3"],
         ];
 
+        if (clonedOptions.legacyTlsSpoof) {
+          tlsCipherPairs.push(
+            ...[
+              ["TLSv1", "TLSv1"],
+              ["TLSv1", "TLSv1.1"],
+            ]
+          );
+        }
+
         const [minTlsVersion, maxTlsVersion] =
           tlsCipherPairs[randint(0, tlsCipherPairs.length - 1)];
 
