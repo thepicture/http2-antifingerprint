@@ -135,6 +135,8 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 
 **Notice**: if `preferChromeHeaderOrder` is `true`, it is not required to set `reorderPseudoHeaders` and `reorderHeaders` properties to `false` as they will default to `false`.
 
+`legacyTlsSpoof` allows to imitate under TLSv.1.2 versions. Servers often reject such versions including the node.js http2 server
+
 ## Test
 
 ```js
