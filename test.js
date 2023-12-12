@@ -18,7 +18,11 @@ let worker;
 describe(() => {
   before(async () => {
     await new Promise((resolve) => {
-      worker = spawn("node", ["./server.js"]);
+      worker = spawn("node", [
+        "--tls-min-v1.0",
+        "--tls-cipher-list=DEFAULT@SECLEVEL=0",
+        "./server.js",
+      ]);
       worker.stdout.on("data", resolve);
     });
   });
@@ -703,17 +707,47 @@ describe(() => {
   });
 
   it("should allow to use legacy tls", async () => {
-    const expected = true;
+    const expectedOption = true;
+    const expectedTls = "TLSv1";
     const options = {
       legacyTlsSpoof: true,
+      forceTlsV1: true,
       ca,
     };
     const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
+    /**
+     * @type {import("node:http2").Http2Stream}
+     */
+    const request = client.request({
+      [constants.HTTP2_HEADER_PATH]: "/tls",
+    });
 
+    const actualTls = await new Promise((resolve) => {
+      let body = "";
+
+      request.on("data", (chunk) => {
+        body += chunk;
+      });
+      request.on("end", () => resolve(body));
+      request.end();
+    });
     const {
-      _http2antifingerprintOptions: { legacyTlsSpoof: actual },
+      _http2antifingerprintOptions: { legacyTlsSpoof: actualOption },
     } = client;
 
-    assert.deepStrictEqual(actual, expected);
+    assert.deepStrictEqual(actualOption, expectedOption);
+    assert.deepStrictEqual(actualTls, expectedTls);
+  });
+
+  it("rejects when using forcing tls1 without legacy tls", () => {
+    const expected = "legacyTlsSpoof required for forceTlsV1";
+    const options = {
+      forceTlsV1: true,
+      ca,
+    };
+
+    const actual = () => http2antifingerprint.connect(MOCK_URL, NOOP, options);
+
+    assert.rejects(actual, expected);
   });
 });
