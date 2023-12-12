@@ -94,6 +94,8 @@ async function connect(authority, listener, options) {
       ...(options?.curveSpoof && getCurveSpoofProps()),
       ...(options?.spoofSecureOptions && getSecureOptions()),
       ...(options?.spoofHonorCipherOrder && getSpoofHonorCipherOrderProps()),
+      ...(options?.legacyTlsSpoof && { legacyTlsSpoof: true }),
+      ...(options?.forceTlsV1 && { forceTlsV1: true }),
     };
 
     const seedHistory = typeof options?.seed === "number" ? [] : null;

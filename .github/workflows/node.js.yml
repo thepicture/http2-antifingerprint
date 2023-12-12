@@ -1,12 +1,9 @@
 name: Node.js CI
-
-on:
-  push:
-    branches: ["master"]
+on: push
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-13.04
 
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +15,10 @@ jobs:
           npm test
 
   publish-npm:
+    runs-on: ubuntu-13.04
+
     needs: test
-    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3

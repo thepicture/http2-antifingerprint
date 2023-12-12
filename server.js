@@ -9,11 +9,13 @@ createSecureServer({
   key: readFileSync("localhost-privkey.pem"),
   cert: readFileSync("localhost-cert.pem"),
 })
-  .on("stream", (stream) => {
-    stream.respond({
-      "content-type": "text/html; charset=utf-8",
-      ":status": 200,
-    });
-    stream.end("<html></html>");
+  .on("request", (request, response) => {
+    if (request.headers[":path"] === "/tls") {
+      response.end(request.stream.session.socket._handle.getCipher().version);
+
+      return;
+    }
+
+    response.end("<html></html>");
   })
   .listen(PORT, () => process.stdout.write("ready"));

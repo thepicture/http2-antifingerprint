@@ -137,6 +137,8 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 
 `legacyTlsSpoof` allows to imitate under TLSv.1.2 versions. Servers often reject such versions including the node.js http2 server
 
+`forceTlsV1` - use only `TLSv1` if `true`. Requires `legacyTlsSpoof` to be `true`
+
 ## Test
 
 ```js
