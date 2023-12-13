@@ -72,8 +72,15 @@ class AntiFingerprintClientSessionOptions {
           ["TLSv1.3", "TLSv1.3"],
         ];
 
-        if (clonedOptions.forceTlsV1 && !clonedOptions.legacyTlsSpoof) {
-          throw new Error("legacyTlsSpoof required for forceTlsV1");
+        const tlsSettingsContradict =
+          [
+            clonedOptions.forceTlsV1,
+            clonedOptions.forceTlsV1dot1,
+            clonedOptions.forceTlsV1dot2,
+          ].filter(Boolean).length && !clonedOptions.legacyTlsSpoof;
+
+        if (tlsSettingsContradict) {
+          throw new Error("legacyTlsSpoof required to force tls version");
         }
 
         if (clonedOptions.legacyTlsSpoof) {
@@ -87,6 +94,16 @@ class AntiFingerprintClientSessionOptions {
           if (clonedOptions.forceTlsV1) {
             tlsCipherPairs.splice(0, tlsCipherPairs.length);
             tlsCipherPairs.push(["TLSv1", "TLSv1"]);
+          }
+
+          if (clonedOptions.forceTlsV1dot1) {
+            tlsCipherPairs.splice(0, tlsCipherPairs.length);
+            tlsCipherPairs.push(["TLSv1.1", "TLSv1.1"]);
+          }
+
+          if (clonedOptions.forceTlsV1dot2) {
+            tlsCipherPairs.splice(0, tlsCipherPairs.length);
+            tlsCipherPairs.push(["TLSv1.2", "TLSv1.2"]);
           }
         }
 

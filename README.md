@@ -139,6 +139,10 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 
 `forceTlsV1` - use only `TLSv1` if `true`. Requires `legacyTlsSpoof` to be `true`
 
+`forceTlsV1dot1` - use only `TLSv1.1` if `true`. Requires `legacyTlsSpoof` to be `true`
+
+`forceTlsV1dot2` - use only `TLSv1.2` if `true`. Requires `legacyTlsSpoof` to be `true`
+
 ## Test
 
 ```js

@@ -3,8 +3,9 @@ on: push
 
 jobs:
   test:
-    runs-on: ubuntu-13.04
+    runs-on: ubuntu-20.04
 
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -15,10 +16,10 @@ jobs:
           npm test
 
   publish-npm:
-    runs-on: ubuntu-13.04
+    runs-on: ubuntu-20.04
 
     needs: test
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
