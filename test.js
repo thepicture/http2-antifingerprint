@@ -708,10 +708,10 @@ describe(() => {
 
   it("should allow to use legacy tls", async () => {
     const expectedOption = true;
-    const expectedTls = "TLSv1";
+    const expectedTls = "TLSv1.2";
     const options = {
       legacyTlsSpoof: true,
-      forceTlsV1: true,
+      forceTlsV1dot2: true,
       ca,
     };
     const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
@@ -739,8 +739,8 @@ describe(() => {
     assert.deepStrictEqual(actualTls, expectedTls);
   });
 
-  it("rejects when using forcing tls1 without legacy tls", () => {
-    const expected = "legacyTlsSpoof required for forceTlsV1";
+  it("rejects when force tls version without legacy tls", () => {
+    const expected = /legacyTlsSpoof required to force tls version/;
     const options = {
       forceTlsV1: true,
       ca,
