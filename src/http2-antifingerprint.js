@@ -98,6 +98,7 @@ async function connect(authority, listener, options) {
       ...(options?.forceTlsV1 && { forceTlsV1: true }),
       ...(options?.forceTlsV1dot1 && { forceTlsV1dot1: true }),
       ...(options?.forceTlsV1dot2 && { forceTlsV1dot2: true }),
+      ...(options?.tls && { tls: options.tls }),
     };
 
     const seedHistory = typeof options?.seed === "number" ? [] : null;
