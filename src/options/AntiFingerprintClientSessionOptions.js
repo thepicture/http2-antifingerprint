@@ -107,6 +107,13 @@ class AntiFingerprintClientSessionOptions {
           }
         }
 
+        if (clonedOptions.tls) {
+          const { tls: version } = clonedOptions;
+
+          tlsCipherPairs.splice(0, tlsCipherPairs.length);
+          tlsCipherPairs.push([version, version]);
+        }
+
         const [minTlsVersion, maxTlsVersion] =
           tlsCipherPairs[randint(0, tlsCipherPairs.length - 1)];
 
