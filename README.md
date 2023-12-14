@@ -143,6 +143,8 @@ Can have `strictMode` boolean property. If specified, the `client.request` metho
 
 `forceTlsV1dot2` - use only `TLSv1.2` if `true`. Requires `legacyTlsSpoof` to be `true`
 
+`tls` - prefer any TLS version if above options won't work. Overrides `forceTls...` options
+
 ## Test
 
 ```js

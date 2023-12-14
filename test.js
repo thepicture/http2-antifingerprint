@@ -750,4 +750,35 @@ describe(() => {
 
     assert.rejects(actual, expected);
   });
+
+  it("freezes tls if tls param passed with version", async () => {
+    const expected = "TLSv1.2";
+    const options = {
+      tls: "TLSv1.2",
+      ca,
+    };
+    const client = await http2antifingerprint.connect(MOCK_URL, NOOP, options);
+    /**
+     * @type {import("node:http2").Http2Stream}
+     */
+    const request = client.request({
+      [constants.HTTP2_HEADER_PATH]: "/tls",
+    });
+
+    const actualTls = await new Promise((resolve) => {
+      let body = "";
+
+      request.on("data", (chunk) => {
+        body += chunk;
+      });
+      request.on("end", () => resolve(body));
+      request.end();
+    });
+    const {
+      _http2antifingerprintOptions: { tls: actualOption },
+    } = client;
+
+    assert.deepStrictEqual(actualOption, expected);
+    assert.deepStrictEqual(actualTls, expected);
+  });
 });
