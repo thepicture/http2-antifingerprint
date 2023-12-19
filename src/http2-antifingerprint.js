@@ -328,6 +328,15 @@ const getSecureOptions = () => ({
       constants.SSL_OP_CRYPTOPRO_TLSEXT_BUG,
       constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION,
       constants.SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION,
+      constants.SSL_OP_CIPHER_SERVER_PREFERENCE,
+      constants.SSL_OP_CISCO_ANYCONNECT,
+      constants.SSL_OP_COOKIE_EXCHANGE,
+      constants.SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS,
+      constants.SSL_OP_LEGACY_SERVER_CONNECT,
+      constants.SSL_OP_NO_QUERY_MTU,
+      constants.SSL_OP_NO_TLSv1,
+      constants.SSL_OP_NO_TLSv1_2,
+      constants.SSL_OP_TLS_ROLLBACK_BUG,
     ]).slice(randint(0, 6))
   ),
 });
