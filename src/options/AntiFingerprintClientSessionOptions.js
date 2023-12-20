@@ -4,6 +4,12 @@ const tls = require("node:tls");
 const { randint, seedint } = require("../randint");
 
 const HTTPS_PORT = 443;
+const IGNORED_FIELD_NAMES = [
+  "negotiationSpoof",
+  "curveSpoof",
+  "spoofSecureOptions",
+  "spoofHonorCipherOrder",
+];
 
 class AntiFingerprintClientSessionOptions {
   get = (options = {}, seedRef, seedHistory) => {
@@ -33,7 +39,7 @@ class AntiFingerprintClientSessionOptions {
 
     return {
       settings,
-      createConnection: (url) => {
+      createConnection: ({ port, host, hostname }) => {
         const ciphers = tls.getCiphers().slice(0, 16);
 
         ciphers.sort(() => (!!randint(0, 1) ? 1 : -1));
@@ -44,23 +50,9 @@ class AntiFingerprintClientSessionOptions {
 
         const clonedOptions = { ...options };
 
-        if (clonedOptions.negotiationSpoof) {
-          delete clonedOptions.negotiationSpoof;
-        }
-
-        if (clonedOptions.curveSpoof) {
-          delete clonedOptions.curveSpoof;
-        }
-
-        if (clonedOptions.spoofSecureOptions) {
-          delete clonedOptions.spoofSecureOptions;
-        }
-
-        if (clonedOptions.spoofHonorCipherOrder) {
-          delete clonedOptions.spoofHonorCipherOrder;
-        }
-
-        const { port } = url;
+        IGNORED_FIELD_NAMES.forEach((name) => {
+          delete clonedOptions[name];
+        });
 
         const tlsCipherPairs = [
           ["TLSv1", "TLSv1.2"],
@@ -117,22 +109,18 @@ class AntiFingerprintClientSessionOptions {
         const [minTlsVersion, maxTlsVersion] =
           tlsCipherPairs[randint(0, tlsCipherPairs.length - 1)];
 
-        return tls.connect(
-          port.length ? Number(port) : HTTPS_PORT,
-          url.hostname,
-          {
-            servername: url.host,
-            ALPNProtocols: ["h2"],
-            ciphers: ciphers.join(":").toUpperCase(),
-            requestCert: true,
-            rejectUnauthorized: false,
-            secureContext: tls.createSecureContext({
-              minVersion: minTlsVersion,
-              maxVersion: maxTlsVersion,
-            }),
-            ...clonedOptions.tlsConnectOverrides,
-          }
-        );
+        return tls.connect(port.length ? Number(port) : HTTPS_PORT, hostname, {
+          servername: host,
+          ALPNProtocols: ["h2"],
+          ciphers: ciphers.join(":").toUpperCase(),
+          requestCert: true,
+          rejectUnauthorized: false,
+          secureContext: tls.createSecureContext({
+            minVersion: minTlsVersion,
+            maxVersion: maxTlsVersion,
+          }),
+          ...clonedOptions.tlsConnectOverrides,
+        });
       },
     };
   };

@@ -1,10 +1,10 @@
 {
   "name": "http2-antifingerprint",
-  "version": "1.17.0",
+  "version": "1.17.1",
   "description": "Prevents identifying http2 requests",
   "main": "index.js",
   "scripts": {
-    "test": "openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout localhost-privkey.pem -out localhost-cert.pem && OPENSSL_CONF=$(pwd)/openssl.conf node test"
+    "test": "openssl req -x509 -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout localhost-privkey.pem -out localhost-cert.pem && node test"
   },
   "files": [
     "src",
