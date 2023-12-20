@@ -4,16 +4,15 @@ const tls = require("node:tls");
 const http = require("node:http");
 const http2 = require("node:http2");
 const { getCurves, constants } = require("node:crypto");
-
-const { shuffle } = require("./shuffle");
-const { randint, seedint } = require("./randint");
-const { bitmask } = require("./bitmask");
 const config = require("./options/const");
 const {
   AntiFingerprintClientSessionOptions,
 } = require("./options/AntiFingerprintClientSessionOptions");
+const { bitmask } = require("./bitmask");
+const { shuffle } = require("./shuffle");
+const { randint, seedint } = require("./randint");
 
-async function connect(authority, listener, options) {
+const connect = async (authority, listener, options) => {
   let proxy = "";
   let optionsProxy;
   let isAuthenticatedProxy = false;
@@ -275,7 +274,7 @@ async function connect(authority, listener, options) {
   };
 
   return client;
-}
+};
 
 module.exports = {
   connect,
